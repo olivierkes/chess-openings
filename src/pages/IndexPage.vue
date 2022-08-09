@@ -5,8 +5,8 @@
         <q-card-section>
           <chess-board
             :orientation="orientation"
-            :game="game"
-            @onMove="onMove"
+            :fen="fen"
+            @afterMove="afterMove"
             :shapes="shapes"
           />
         </q-card-section>
@@ -22,138 +22,106 @@
             ]"
           />
         </q-card-section>
+        <q-card-section>
+          <q-chip
+            v-for="(v, k) in historyIcons"
+            :key="k"
+            clickable
+            class="bg-grey"
+            square
+            @click="restoreHistory(k)"
+          >
+            <q-avatar>
+              <q-icon :name="v.icon" size="1.5em" right :color="v.color" />
+            </q-avatar>
+            {{ v.san }}
+          </q-chip>
+        </q-card-section>
       </q-card>
     </div>
   </q-page>
 </template>
 
 <script>
-import { defineComponent, ref, reactive } from "vue";
+import { defineComponent, ref, reactive, computed, watch } from "vue";
 import { Chess } from "chess.js";
+
+import kingspawn from "assets/openings/kings-pawn.json";
 
 export default defineComponent({
   name: "IndexPage",
   setup() {
     const orientation = ref("white");
-    const game = new Chess();
+    const game = reactive(new Chess());
+    const fen = ref(game.fen());
 
     const switchOrientation = () => {
       orientation.value = orientation.value === "white" ? "black" : "white";
     };
     const reset = () => {
-      game.load("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+      fen.value = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+      game.load(fen.value);
     };
 
-    const onMove = (v) => {
-      console.log(game.fen());
-      console.log(game.history());
+    const afterMove = (from, to, metadata) => {
+      var m = game.move({ from: from, to: to });
+      if (!m) {
+        // If m is null the move was not valid
+        // Let's assume it was a promotion
+        game.move({
+          from: from,
+          to: to,
+          promotion: "q",
+        });
+      }
+      fen.value = game.fen();
+      history.value = game.history({ verbose: true });
+    };
+
+    const history = ref([]);
+    const historyIcons = computed(() => {
+      return history.value.map((k) => {
+        var h = {
+          san: k.san,
+          icon: {
+            b: "fa-solid fa-chess-bishop",
+            n: "fa-solid fa-chess-knight",
+            r: "fa-solid fa-chess-rook",
+            q: "fa-solid fa-chess-queen",
+            k: "fa-solid fa-chess-king",
+            p: "fa-solid fa-chess-pawn",
+          }[k.piece],
+          color: k.color == "w" ? "white" : "black",
+        };
+        if (["k", "q"].includes(k.flags)) h.icon = "fa-solid fa-chess";
+        return h;
+      });
+    });
+    const restoreHistory = (i) => {
+      var g = new Chess();
+      for (var k = 0; k < i; k++) {
+        g.move(history.value[k]);
+      }
+      fen.value = g.fen();
+      game.load_pgn(g.pgn());
     };
 
     const shapes = reactive([]); // { orig: "a1", dest: "h8", brush: "red" }
 
     const level = ref("arrows");
 
-    const openings = {
-      name: "Pion du roi",
-      play: "e4",
-      moves: [
-        {
-          c5: {
-            play: "Kf3",
-            moves: [
-              {
-                d6: {
-                  play: "d4",
-                  moves: [
-                    {
-                      cxd4: { play: "Kxd4", moves: [{ Kf6: { play: "Kc3" } }] },
-                      Kf6: { play: "Kc3", moves: [{ cxd4: { play: "Kxd4" } }] },
-                    },
-                  ],
-                },
-              },
-              {
-                Kc6: {
-                  play: "d4",
-                  moves: [
-                    {
-                      cxd4: {
-                        play: "Kxd4",
-                        moves: [
-                          { Kf6: { play: "Kc3" } },
-                          { g6: { play: "Kc3" } },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              },
-              {
-                e6: {
-                  play: "d4",
-                  moves: [
-                    {
-                      cxd4: {
-                        play: "Kxd4",
-                        moves: [
-                          {
-                            a6: { play: "Bd3" },
-                            Kc6: { play: "Kc3" },
-                            Kf6: { play: "Kc3" },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-        {
-          e5: {
-            play: "Kf3",
-            moves: [
-              {
-                Kc6: {
-                  play: "Bb5",
-                  moves: [{ a6: { play: "Ba4" }, Kf6: { play: "O-O" } }],
-                },
-                Kf6: {
-                  play: "Kxe5",
-                  moves: [
-                    { d6: { play: "Kf3", moves: [{ Kxe4: { play: "d4" } }] } },
-                  ],
-                },
-                d6: { play: "d4" },
-              },
-            ],
-          },
-        },
-        {
-          e6: {
-            play: "d4",
-            moves: [
-              {
-                d5: {
-                  play: "Kc3",
-                  moves: [{ Bb4: { play: "e5" } }, { Kf6: { play: "e5" } }],
-                },
-              },
-            ],
-          },
-        },
-      ],
-    };
-
     return {
       orientation,
       switchOrientation,
       reset,
       game,
-      onMove,
+      afterMove,
       shapes,
       level,
+      fen,
+      history,
+      historyIcons,
+      restoreHistory,
     };
   },
 });

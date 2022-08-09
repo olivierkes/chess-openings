@@ -1,7 +1,6 @@
 <template>
   <div class="blue merida full-width" ref="container">
     <div ref="board"></div>
-    {{ history }}
   </div>
 </template>
 
@@ -29,14 +28,16 @@ export default {
       type: String,
       default: "white",
     },
-    game: {
-      default: new Chess(),
+    fen: {
+      type: String,
+      default: "",
     },
   },
-  emits: ["onMove"],
+  emits: ["afterMove"],
   setup(props, ctx) {
     const board = ref();
     const container = ref();
+    const game = new Chess();
     var ground = null;
 
     // PROPS
@@ -44,21 +45,22 @@ export default {
       () => props.orientation,
       () => setBoard()
     );
-
-    const history = ref([]);
-    watch(history, () => {
-      console.log("HISTORY:", props.game.history());
-      setBoard();
-    });
+    watch(
+      () => props.fen,
+      () => {
+        game.load(props.fen);
+        setBoard();
+      }
+    );
 
     const possibleMoves = () => {
       const dests = new Map();
-      props.game
+      game
         .board()
         .flat()
         .forEach((s) => {
           if (s) {
-            const ms = props.game.moves({
+            const ms = game.moves({
               square: s.square,
               verbose: true,
             });
@@ -73,14 +75,15 @@ export default {
     };
 
     const toColor = () => {
-      return props.game.turn() === "w" ? "white" : "black";
+      return game.turn() === "w" ? "white" : "black";
     };
 
     const setBoard = () => {
+      game.load(props.fen);
       const config = {
         turnColor: toColor(),
+        fen: props.fen,
         orientation: props.orientation,
-        fen: props.game.fen(),
         movable: {
           color: toColor(),
           dests: possibleMoves(),
@@ -89,22 +92,11 @@ export default {
       ground.set(config);
       ground.setShapes(props.shapes);
       ground.redrawAll();
+      ctx.emit("afterMove");
     };
 
     const afterMove = (from, to, metadata) => {
-      var m = props.game.move({ from: from, to: to });
-      if (!m) {
-        // If m is null the move was not valid
-        // Let's assume it was a promotion
-        props.game.move({
-          from: from,
-          to: to,
-          promotion: props.onPromotion(),
-        });
-      }
-      setBoard();
-      history.value = props.game.history();
-      ctx.emit("onMove", props.game);
+      ctx.emit("afterMove", from, to, metadata);
     };
 
     onMounted(() => {
@@ -128,7 +120,7 @@ export default {
       width.value = w - 5 + "px";
     };
 
-    return { board, container, width, history };
+    return { board, container, width };
   },
 };
 </script>
