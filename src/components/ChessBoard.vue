@@ -1,8 +1,8 @@
 <template>
   <div class="blue merida full-width" ref="container">
     <div ref="board"></div>
+    {{ history }}
   </div>
-  Width: {{ width }}
 </template>
 
 <script>
@@ -13,15 +13,14 @@ https://github.com/vitogit/vue-chessboard/blob/master/src/components/chessboard/
 
 import { Chessground } from "chessground";
 import { Chess } from "chess.js";
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, onMounted, watch, reactive } from "vue";
 
 export default {
   name: "ChessBoard",
   props: {
-    // fen: {
-    //   type: String,
-    //   default: "",
-    // },
+    shapes: {
+      type: Array,
+    },
     onPromotion: {
       type: Function,
       default: () => "q",
@@ -45,6 +44,12 @@ export default {
       () => props.orientation,
       () => setBoard()
     );
+
+    const history = ref([]);
+    watch(history, () => {
+      console.log("HISTORY:", props.game.history());
+      setBoard();
+    });
 
     const possibleMoves = () => {
       const dests = new Map();
@@ -82,6 +87,8 @@ export default {
         },
       };
       ground.set(config);
+      ground.setShapes(props.shapes);
+      ground.redrawAll();
     };
 
     const afterMove = (from, to, metadata) => {
@@ -96,6 +103,7 @@ export default {
         });
       }
       setBoard();
+      history.value = props.game.history();
       ctx.emit("onMove", props.game);
     };
 
@@ -120,7 +128,7 @@ export default {
       width.value = w - 5 + "px";
     };
 
-    return { board, container, width };
+    return { board, container, width, history };
   },
 };
 </script>
