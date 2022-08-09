@@ -36,6 +36,9 @@
             </q-avatar>
             {{ v.san }}
           </q-chip>
+          {{ loading }}
+          <hr />
+          {{ lichess.positions[fen] }}
         </q-card-section>
       </q-card>
     </div>
@@ -45,7 +48,7 @@
 <script>
 import { defineComponent, ref, reactive, computed, watch } from "vue";
 import { Chess } from "chess.js";
-import { useQuasar } from "quasar";
+import { useLichess } from "stores/lichess";
 
 import kingspawn from "assets/openings/kings-pawn.json";
 
@@ -55,10 +58,13 @@ export default defineComponent({
     const orientation = ref("white");
     const game = reactive(new Chess());
     const fen = ref(game.fen());
-    const $q = useQuasar();
 
-    $q.localStorage.set("test", 14);
-    console.log($q.localStorage.getItem("test"));
+    // LICHESS
+    const lichess = useLichess();
+    const loading = lichess.loading;
+    const getPosition = (fen) => lichess.fetch(fen);
+    getPosition(fen.value);
+    watch(fen, () => getPosition(fen.value));
 
     const switchOrientation = () => {
       orientation.value = orientation.value === "white" ? "black" : "white";
@@ -127,6 +133,8 @@ export default defineComponent({
       history,
       historyIcons,
       restoreHistory,
+      loading,
+      lichess,
     };
   },
 });

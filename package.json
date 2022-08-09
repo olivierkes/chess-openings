@@ -15,6 +15,7 @@
     "axios": "^0.27.2",
     "chess.js": "^0.13.4",
     "chessground": "^8.3.5",
+    "pinia": "^2.0.17",
     "quasar": "^2.6.0",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0"
