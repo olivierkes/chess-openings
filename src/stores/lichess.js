@@ -25,11 +25,10 @@ export const useLichess = defineStore("lichess", {
         this.loading = true;
         const data = await axios.get(url);
         LocalStorage.set(fen, data.data);
-        this.loading = true;
         p = data.data;
       }
       this.positions[fen] = p;
-      console.log(this.positions);
+      this.loading = false;
       return p;
     },
   },

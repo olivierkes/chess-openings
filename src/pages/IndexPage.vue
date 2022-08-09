@@ -1,31 +1,35 @@
 <template>
   <q-page class="row">
     <div class="col-12">
-      <q-card>
-        <q-card-section>
-          <chess-board
-            :orientation="orientation"
-            :fen="fen"
-            @afterMove="afterMove"
-            :shapes="shapes"
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-btn flat @click="switchOrientation" icon="cached"></q-btn>
-          <q-btn flat @click="reset" icon="first_page"></q-btn>
-          <q-btn-toggle
-            v-model="level"
-            :options="[
-              { label: 'Arrows', value: 'arrows', icon: 'arrow_forward' },
-              { label: 'Circle', value: 'circles', icon: 'circle' },
-              { label: 'None', value: 'none', icon: 'block' },
-            ]"
-          />
-        </q-card-section>
-        <q-card-section>
+      <q-card class="q-ma-sm" flat>
+        <chess-board
+          :orientation="orientation"
+          :fen="fen"
+          @afterMove="afterMove"
+          :shapes="shapes"
+        />
+        <div class="row">
+          <q-btn
+            size="sm"
+            flat
+            @click="switchOrientation"
+            icon="cached"
+          ></q-btn>
+          <q-btn size="sm" flat @click="reset" icon="first_page"></q-btn>
+          <q-space />
+          <q-btn
+            size="sm"
+            flat
+            :color="showOptions ? 'primary' : 'black'"
+            @click="showOptions = !showOptions"
+            icon="settings"
+          ></q-btn>
+        </div>
+        <div class="q-pa-xs">
           <q-chip
             v-for="(v, k) in historyIcons"
             :key="k"
+            size="sm"
             clickable
             class="bg-grey"
             square
@@ -36,8 +40,138 @@
             </q-avatar>
             {{ v.san }}
           </q-chip>
-          {{ loading }}
-          <hr />
+        </div>
+      </q-card>
+      <!-- Options  -->
+      <q-card flat v-if="showOptions">
+        <q-card-section class="row q-gutter-md">
+          <div class="text-caption col-3">Playing from</div>
+          <q-btn-toggle
+            v-model="playing"
+            unelevated
+            size="sm"
+            color="grey-3"
+            text-color="grey-8"
+            toggle-text-color="white"
+            rounded
+            class="col-8 q-mt-md"
+            :options="[
+              {
+                label: 'White',
+                value: 'white',
+                icon: 'fa-regular fa-chess-king',
+              },
+              {
+                label: 'Black',
+                value: 'black',
+                icon: 'fa-solid fa-chess-king',
+              },
+            ]"
+          />
+          <div class="text-caption col-3">Level</div>
+          <q-btn-toggle
+            v-model="level"
+            unelevated
+            size="sm"
+            color="grey-3"
+            text-color="grey-8"
+            toggle-text-color="white"
+            rounded
+            class="col-8"
+            :options="[
+              { label: 'Arrows', value: 'arrows', icon: 'arrow_forward' },
+              { label: 'Circle', value: 'circles', icon: 'circle' },
+              { label: 'None', value: 'none', icon: 'block' },
+            ]"
+          />
+          <div class="text-caption col-3">Number of moves</div>
+          <q-btn-toggle
+            v-model="moves"
+            unelevated
+            size="sm"
+            color="grey-3"
+            text-color="grey-8"
+            toggle-text-color="white"
+            rounded
+            class="col-8"
+            :options="[
+              { label: '1', value: 1 },
+              { label: '2', value: 2 },
+              { label: '3', value: 3 },
+              { label: '4', value: 4 },
+              { label: '5', value: 5 },
+            ]"
+          />
+          <div class="text-caption col-3">Variants</div>
+          <q-btn-toggle
+            v-model="variants"
+            unelevated
+            size="sm"
+            color="grey-3"
+            text-color="grey-8"
+            toggle-text-color="white"
+            rounded
+            class="col-8"
+            :options="[
+              { label: '1', value: 1 },
+              { label: '2', value: 2 },
+              { label: '3', value: 3 },
+              { label: '4', value: 4 },
+              { label: '5', value: 5 },
+            ]"
+          />
+        </q-card-section>
+      </q-card>
+      <q-card class="q-ma-md">
+        <q-inner-loading :showing="loading">
+          <q-spinner-gears size="50px" color="primary" />
+        </q-inner-loading>
+        <!-- Name -->
+        <q-card-section
+          class="bg-primary text-white"
+          v-if="lichess.positions[fen] && lichess.positions[fen].opening"
+        >
+          <div class="text-h6">{{ lichess.positions[fen].opening.name }}</div>
+        </q-card-section>
+        <!-- Moves -->
+        <q-list v-if="lichess.positions[fen]">
+          <q-item
+            clickable
+            v-for="(m, i) in lichess.positions[fen].moves"
+            :key="i"
+          >
+            <q-item-section avatar>
+              <q-avatar color="blue text-white">{{ m.san }}</q-avatar>
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>
+                <div
+                  class="bg-grey-2 float-left text-center text-grey-10"
+                  :style="{ width: movePercentage(m).white * 100 + '%' }"
+                >
+                  {{ parseFloat(movePercentage(m).white).toFixed(2) + "%" }}
+                </div>
+                <div
+                  class="bg-grey float-left text-center"
+                  :style="{ width: movePercentage(m).draws * 100 + '%' }"
+                >
+                  {{ parseFloat(movePercentage(m).draws).toFixed(2) + "%" }}
+                </div>
+                <div
+                  class="bg-grey-10 float-left text-center text-white"
+                  :style="{ width: movePercentage(m).black * 100 + '%' }"
+                >
+                  {{ parseFloat(movePercentage(m).black).toFixed(2) + "%" }}
+                </div>
+              </q-item-label>
+              <q-item-label caption
+                >{{ movePercentage(m).total }} parties</q-item-label
+              >
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <q-card-section>
           {{ lichess.positions[fen] }}
         </q-card-section>
       </q-card>
@@ -65,6 +199,15 @@ export default defineComponent({
     const getPosition = (fen) => lichess.fetch(fen);
     getPosition(fen.value);
     watch(fen, () => getPosition(fen.value));
+    const movePercentage = (m) => {
+      var t = m["white"] + m["black"] + m["draws"];
+      return {
+        white: m["white"] / t,
+        draws: m["draws"] / t,
+        black: m["black"] / t,
+        total: t,
+      };
+    };
 
     const switchOrientation = () => {
       orientation.value = orientation.value === "white" ? "black" : "white";
@@ -119,7 +262,12 @@ export default defineComponent({
 
     const shapes = reactive([]); // { orig: "a1", dest: "h8", brush: "red" }
 
+    // OPTIONS
     const level = ref("arrows");
+    const playing = ref("white");
+    const moves = ref(3);
+    const variants = ref(1);
+    const showOptions = ref(false);
 
     return {
       orientation,
@@ -135,6 +283,11 @@ export default defineComponent({
       restoreHistory,
       loading,
       lichess,
+      movePercentage,
+      playing,
+      moves,
+      variants,
+      showOptions,
     };
   },
 });
