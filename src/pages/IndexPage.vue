@@ -45,6 +45,7 @@
 <script>
 import { defineComponent, ref, reactive, computed, watch } from "vue";
 import { Chess } from "chess.js";
+import { useQuasar } from "quasar";
 
 import kingspawn from "assets/openings/kings-pawn.json";
 
@@ -54,6 +55,10 @@ export default defineComponent({
     const orientation = ref("white");
     const game = reactive(new Chess());
     const fen = ref(game.fen());
+    const $q = useQuasar();
+
+    $q.localStorage.set("test", 14);
+    console.log($q.localStorage.getItem("test"));
 
     const switchOrientation = () => {
       orientation.value = orientation.value === "white" ? "black" : "white";

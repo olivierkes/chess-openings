@@ -8,6 +8,5 @@ export default boot(async ({ app }) => {
   app.component("chess-board", ChessBoard);
 
   // global props
-  // app.config.globalProperties.$geo = useGeolocation();
   // app.config.globalProperties.$utils = useUtils();
 });
