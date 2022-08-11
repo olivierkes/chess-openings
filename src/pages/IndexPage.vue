@@ -191,7 +191,7 @@ import kingspawn from "assets/openings/kings-pawn.json";
 export default defineComponent({
   name: "IndexPage",
   setup() {
-    const orientation = ref("white");
+    const orientation = ref("w");
     const game = reactive(new Chess());
     const fen = ref(game.fen());
 
@@ -204,7 +204,7 @@ export default defineComponent({
 
     // TOOLS
     const switchOrientation = () => {
-      orientation.value = orientation.value === "white" ? "black" : "white";
+      orientation.value = orientation.value === "w" ? "b" : "w";
     };
     const reset = () => {
       fen.value = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -313,6 +313,8 @@ export default defineComponent({
     const variants = ref(1);
     const depth = ref(1);
     const showOptions = ref(false);
+
+    watch(playing, () => (orientation.value = playing.value));
 
     return {
       orientation,

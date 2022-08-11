@@ -58,7 +58,6 @@ export const useLichess = defineStore("lichess", {
         var name = "";
         if (state.positions[fen2] && state.positions[fen2].opening)
           name = state.positions[fen2].opening.name;
-        console.log("Getting move name", san, name);
         return name;
       };
     },

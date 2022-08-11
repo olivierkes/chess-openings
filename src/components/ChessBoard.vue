@@ -26,7 +26,7 @@ export default {
     },
     orientation: {
       type: String,
-      default: "white",
+      default: "w",
     },
     fen: {
       type: String,
@@ -78,18 +78,18 @@ export default {
       return dests;
     };
 
-    const toColor = () => {
-      return game.turn() === "w" ? "white" : "black";
+    const color = (color) => {
+      return color === "w" ? "white" : "black";
     };
 
     const setBoard = () => {
       game.load(props.fen);
       const config = {
-        turnColor: toColor(),
+        turnColor: color(game.turn()),
         fen: props.fen,
-        orientation: props.orientation,
+        orientation: color(props.orientation),
         movable: {
-          color: toColor(),
+          color: color(game.turn()),
           dests: possibleMoves(),
         },
       };
