@@ -32,7 +32,13 @@
             :key="k"
             size="sm"
             clickable
-            class="bg-grey"
+            :class="
+              k == 0
+                ? 'bg-green'
+                : v.san == game.history().slice(-1)
+                ? 'bg-orange'
+                : 'bg-grey'
+            "
             square
             @click="restoreHistory(k)"
           >
@@ -126,11 +132,78 @@
           class="bg-primary text-white"
           v-if="lichess.positions[fen] && lichess.positions[fen].opening"
         >
-          <div class="text-h6">{{ lichess.positions[fen].opening.name }}</div>
+          <div class="text-h6">
+            {{ lichess.positions[fen].opening.name }}
+          </div>
         </q-card-section>
+        <!-- Games -->
+        <q-list v-if="game.history().length == 0">
+          <q-item
+            clickable
+            v-for="(m, i) in possibleMoves"
+            :key="i"
+            @mouseover="hover = m.san"
+            @mouseleave="hover = ''"
+            @click="afterMove(m.from, m.to)"
+            class="bg-green"
+          >
+            <!-- Avatar -->
+            <q-item-section avatar>
+              <q-avatar class="bg-white">
+                <q-icon name="play_arrow" round></q-icon>
+              </q-avatar>
+            </q-item-section>
+
+            <!-- Percentage -->
+            <q-item-section>
+              <!-- Name -->
+              <q-item-label v-if="m.name" class="text-h5">
+                <q-icon :name="iconName(m.piece)"></q-icon> {{ m.name }}
+              </q-item-label>
+              <q-item-label caption class="full-width">
+                <div
+                  class="bg-green-10 float-left text-center text-white q-mr-sm"
+                  :style="{ width: m.percentage + '%' }"
+                >
+                  {{ m.percentage.toFixed(1) + "%" }}
+                </div>
+                {{ m.total }} parties
+              </q-item-label>
+
+              <!-- Win -->
+              <q-item-label caption>
+                <div
+                  class="bg-grey-2 float-left text-center text-grey-10"
+                  :style="{ width: m.white + '%' }"
+                >
+                  {{ parseFloat(m.white).toFixed(1) + "%" }}
+                </div>
+                <div
+                  class="bg-grey float-left text-center"
+                  :style="{ width: m.draws + '%' }"
+                >
+                  {{ parseFloat(m.draws).toFixed(1) + "%" }}
+                </div>
+                <div
+                  class="bg-grey-10 float-left text-center text-white"
+                  :style="{ width: m.black + '%' }"
+                >
+                  {{ parseFloat(m.black).toFixed(1) + "%" }}
+                </div>
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
         <!-- Moves -->
-        <q-list v-if="lichess.positions[fen]">
-          <q-item clickable v-for="(m, i) in possibleMoves" :key="i">
+        <q-list v-if="lichess.positions[fen] && game.history().length > 0">
+          <q-item
+            clickable
+            v-for="(m, i) in possibleMoves"
+            :key="i"
+            @mouseover="hover = m.san"
+            @mouseleave="hover = ''"
+            @click="afterMove(m.from, m.to)"
+          >
             <!-- Avatar -->
             <q-item-section avatar>
               <q-avatar color="blue text-white">{{ m.san }}</q-avatar>
@@ -140,7 +213,7 @@
             <q-item-section>
               <!-- Name -->
               <q-item-label caption v-if="m.name">
-                {{ m.name }}
+                <q-icon :name="iconName(m.piece)"></q-icon> {{ m.name }}
               </q-item-label>
               <q-item-label caption class="full-width">
                 <div
@@ -185,8 +258,7 @@
 import { defineComponent, ref, reactive, computed, watch } from "vue";
 import { Chess } from "chess.js";
 import { useLichess } from "stores/lichess";
-
-import kingspawn from "assets/openings/kings-pawn.json";
+import { _ } from "lodash";
 
 export default defineComponent({
   name: "IndexPage",
@@ -194,6 +266,12 @@ export default defineComponent({
     const orientation = ref("w");
     const game = reactive(new Chess());
     const fen = ref(game.fen());
+
+    // OPTIONS
+    const level = ref("arrows"); // Difficulty: 'arrows' (easy, shows arrows), 'circles' (medium, show circles), 'none' (hard, shows nothing)
+    const playing = ref("w"); // Player color
+    const variants = ref(1); // number of player color moves to be accepted. 1 is only the most popular.
+    const depth = ref(5); // number of turns to play
 
     // LICHESS
     const lichess = useLichess();
@@ -212,34 +290,40 @@ export default defineComponent({
     };
 
     const afterMove = (from, to, metadata) => {
+      // Nothing happens because this is called a second time probably
+      if (!from || !to) return;
       var m = game.move({ from: from, to: to });
       if (!m) {
-        // // If m is null the move was not valid
-        // // Let's assume it was a promotion
-        // game.move({
-        //   from: from,
-        //   to: to,
-        //   promotion: "q",
-        // });
-        return;
+        // If m is null the move was not valid
+        // Let's assume it was a promotion
+        game.move({
+          from: from,
+          to: to,
+          promotion: "q",
+        });
       }
       fen.value = game.fen();
       history.value = game.history({ verbose: true });
+
+      // Game logic
     };
+
+    const iconName = (name) =>
+      ({
+        b: "fa-solid fa-chess-bishop",
+        n: "fa-solid fa-chess-knight",
+        r: "fa-solid fa-chess-rook",
+        q: "fa-solid fa-chess-queen",
+        k: "fa-solid fa-chess-king",
+        p: "fa-solid fa-chess-pawn",
+      }[name]);
 
     const history = ref([]);
     const historyIcons = computed(() => {
       return history.value.map((k) => {
         var h = {
           san: k.san,
-          icon: {
-            b: "fa-solid fa-chess-bishop",
-            n: "fa-solid fa-chess-knight",
-            r: "fa-solid fa-chess-rook",
-            q: "fa-solid fa-chess-queen",
-            k: "fa-solid fa-chess-king",
-            p: "fa-solid fa-chess-pawn",
-          }[k.piece],
+          icon: iconName(k.piece),
           color: k.color == "w" ? "white" : "black",
         };
         if (["k", "q"].includes(k.flags)) h.icon = "fa-solid fa-chess";
@@ -248,14 +332,14 @@ export default defineComponent({
     });
     const restoreHistory = (i) => {
       var g = new Chess();
-      for (var k = 0; k < i; k++) {
+      for (var k = 0; k <= i; k++) {
         g.move(history.value[k]);
       }
       fen.value = g.fen();
       game.load_pgn(g.pgn());
     };
 
-    // GAME LOGIC
+    // Possible Moves
     const possibleMoves = computed(() => {
       var moves = game.moves({ verbose: true });
       var filteredMoves = lichess.filteredMoves(fen.value);
@@ -264,13 +348,12 @@ export default defineComponent({
       moves.forEach((move) => {
         Object.assign(
           move,
-          filteredMoves.find((m) => m.san == move.san)
+          filteredMoves.find((m) => m.san == move.san),
+          { turn: game.history().length }
         );
       });
       // Sort by percentage
       moves = moves.sort((a, b) => b.percentage - a.percentage);
-      // If playing color, keep only 'variants' moves
-      if (game.turn() == playing.value) moves = moves.slice(0, variants.value);
       // Prefetch those moves
       moves.forEach((m) => {
         const g = new Chess();
@@ -278,25 +361,71 @@ export default defineComponent({
         g.move(m.san);
         getPosition(g.fen());
       });
+      // If playing color, keep only 'variants' moves
+      if (game.turn() == playing.value) moves = moves.slice(0, variants.value);
       // return moves
       return moves;
     });
 
+    const lastPossibleMoves = ref([]);
+    watch(possibleMoves, (newValue, oldValue) => {
+      console.log(oldValue, newValue);
+      if (!_.isEqual(newValue, oldValue)) lastPossibleMoves.value = oldValue;
+    });
+
+    // Shapes
     // { orig: "a1", dest: "h8", brush: "red" }
     const shapes = computed(() => {
-      var color = game.turn() == playing.value ? "green" : "red";
-      if (level.value == "none") return [];
+      // function that returns 'yellow' if the move is hovered on the list, or 'green' if playing, else 'red'
+      const color = (san) =>
+        san == hover.value
+          ? "yellow"
+          : game.turn() == playing.value
+          ? "green"
+          : "red";
+      var shapes = [];
+
+      // Level = none: no shapes
+      if (level.value == "none") return shapes;
+      // Possible moves
       else if (level.value == "circles")
-        return possibleMoves.value.map((m) => ({
+        shapes = possibleMoves.value.map((m) => ({
           orig: m.from,
-          brush: color,
+          brush: color(m.san),
         }));
       else
-        return possibleMoves.value.map((m) => ({
+        shapes = possibleMoves.value.map((m) => ({
           orig: m.from,
           dest: m.to,
-          brush: color,
+          brush: color(m.san),
         }));
+
+      // Last moves
+      if (game.history().length > 0) {
+        var m = game.history({ verbose: true }).slice(-1)[0];
+        if (level.value == "arrows") {
+          shapes.push({
+            orig: m.from,
+            dest: m.to,
+            brush: m.color == playing.value ? "paleGreen" : "paleRed",
+          });
+        } else {
+          shapes.push({
+            orig: m.to,
+            brush: m.color == playing.value ? "paleGreen" : "paleRed",
+          });
+        }
+        // Show the other pieces that might have moved
+        if (game.turn() == playing.value && level.value == "arrows")
+          lastPossibleMoves.value.forEach((m) =>
+            shapes.push({
+              orig: m.from,
+              brush: "paleRed",
+            })
+          );
+      }
+
+      return shapes;
       // brushes: {
       //   green: { key: 'g', color: '#15781B', opacity: 1, lineWidth: 10 },
       //   red: { key: 'r', color: '#882020', opacity: 1, lineWidth: 10 },
@@ -307,13 +436,11 @@ export default defineComponent({
       //   paleRed: { key: 'pr', color: '#882020', opacity: 0.4, lineWidth: 15 },
     });
 
-    // OPTIONS
-    const level = ref("arrows");
-    const playing = ref("w");
-    const variants = ref(1);
-    const depth = ref(1);
+    // UI
     const showOptions = ref(false);
+    const hover = ref(""); // move hovered on the list
 
+    // Change orientation upon changing playing color
     watch(playing, () => (orientation.value = playing.value));
 
     return {
@@ -335,6 +462,8 @@ export default defineComponent({
       showOptions,
       depth,
       possibleMoves,
+      hover,
+      iconName,
     };
   },
 });
