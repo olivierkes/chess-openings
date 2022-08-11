@@ -17,12 +17,49 @@
         <div class="row">
           <q-btn size="sm" flat @click="restart" icon="restart_alt"></q-btn>
           <q-space />
+          <q-btn size="sm" flat @click="switchOrientation" icon="cached">
+            <q-tooltip>Switch side</q-tooltip>
+          </q-btn>
           <q-btn
             size="sm"
             flat
-            @click="switchOrientation"
-            icon="cached"
+            :disable="!game.history().length"
+            :color="showList ? 'primary' : 'black'"
+            @click="showList = !showList"
+            icon="format_list_bulleted"
           ></q-btn>
+          <q-btn
+            size="sm"
+            flat
+            :disabled="!history.length"
+            :color="showHistory ? 'primary' : 'black'"
+            @click="showHistory = !showHistory"
+            icon="history"
+          ></q-btn>
+          <q-space />
+          <q-btn-group flat dense>
+            <q-btn
+              size="sm"
+              flat
+              icon="arrow_forward"
+              :color="level == 'arrows' ? 'primary' : 'black'"
+              @click="level = 'arrows'"
+            />
+            <q-btn
+              size="sm"
+              flat
+              icon="circle"
+              :color="level == 'circles' ? 'primary' : 'black'"
+              @click="level = 'circles'"
+            />
+            <q-btn
+              size="sm"
+              flat
+              icon="block"
+              :color="level == 'none' ? 'primary' : 'black'"
+              @click="level = 'none'"
+            />
+          </q-btn-group>
           <q-space />
           <q-btn
             size="sm"
@@ -31,16 +68,9 @@
             @click="showOptions = !showOptions"
             icon="settings"
           ></q-btn>
-          <q-btn
-            size="sm"
-            flat
-            :color="showList ? 'primary' : 'black'"
-            @click="showList = !showList"
-            icon="format_list_bulleted"
-          ></q-btn>
         </div>
         <!-- History -->
-        <div class="q-pa-xs">
+        <div class="q-pa-xs" v-if="showHistory">
           <q-chip
             v-for="(v, k) in historyIcons"
             :key="k"
@@ -63,107 +93,130 @@
           </q-chip>
         </div>
       </q-card>
-      <!-- Options  -->
-      <q-card flat v-if="showOptions">
-        <q-card-section class="row q-gutter-md">
-          <!-- Player color -->
-          <div class="text-caption col-3">Playing from</div>
-          <q-btn-toggle
-            v-model="playing"
-            unelevated
-            size="sm"
-            color="grey-3"
-            text-color="grey-8"
-            toggle-text-color="white"
-            rounded
-            class="col-8 q-mt-md"
-            :options="[
-              {
-                label: 'White',
-                value: 'w',
-                icon: 'fa-regular fa-chess-king',
-              },
-              {
-                label: 'Black',
-                value: 'b',
-                icon: 'fa-solid fa-chess-king',
-              },
-            ]"
-          />
-          <!-- Level -->
-          <div class="text-caption col-3">Assistance</div>
-          <q-btn-toggle
-            v-model="level"
-            unelevated
-            size="sm"
-            color="grey-3"
-            text-color="grey-8"
-            toggle-text-color="white"
-            rounded
-            class="col-8"
-            :options="[
-              { label: 'Arrows', value: 'arrows', icon: 'arrow_forward' },
-              { label: 'Circle', value: 'circles', icon: 'circle' },
-              { label: 'None', value: 'none', icon: 'block' },
-            ]"
-          />
-          <!-- Move percentage -->
-          <div class="text-caption col-3">
-            Only use moves played more than x% of the time.
+      <!-- You won ! -->
+      <q-card v-if="turnPlayed >= depth" class="q-ma-md bg-green" square>
+        <q-card-section>
+          <div class="text-h6">
+            <q-icon name="star" size="md"></q-icon> Congratulations, you won !
+            <q-btn
+              flat
+              class="float-right"
+              icon="restart_alt"
+              @click="restart"
+              label="Restart"
+            />
           </div>
-          <q-slider
-            v-model="minMovePercentage"
-            class="col-8"
-            :min="0"
-            :max="50"
-            label
-            :label-value="minMovePercentage + '%'"
-          />
-          <!-- Depth -->
-          <div class="text-caption col-3">Number of moves to play (depth)</div>
-          <q-slider v-model="depth" class="col-8" :min="1" :max="15" label />
-          <!-- Timer -->
-          <div class="text-caption col-3">Autoplay delay</div>
-          <q-slider
-            v-model="timeout"
-            class="col-6"
-            :min="0"
-            :max="5000"
-            :step="100"
-          />
-          <div class="text-caption col-1">
-            {{ timeout ? timeout + "ms" : "disabled" }}
-          </div>
-          <!-- Variants -->
-          <div class="text-caption col-3">Number of variant to learn</div>
-          <q-btn-toggle
-            v-model="variants"
-            unelevated
-            size="sm"
-            color="grey-3"
-            text-color="grey-8"
-            toggle-text-color="white"
-            rounded
-            class="col-8"
-            :options="[
-              { label: 'All', value: 0 },
-              { label: '1', value: 1 },
-              { label: '2', value: 2 },
-              { label: '3', value: 3 },
-              { label: '4', value: 4 },
-              { label: '5', value: 5 },
-            ]"
-          />
-          <q-btn
-            class="col-6 offset-3"
-            label="Restore defaults"
-            flat
-            icon="settings_backup_restore"
-            color="grey"
-            @click="restoreSettings"
-          ></q-btn>
         </q-card-section>
       </q-card>
+      <!-- Options  -->
+      <q-dialog v-model="showOptions">
+        <q-card flat v-if="showOptions">
+          <q-card-section class="row q-gutter-md">
+            <!-- Player color -->
+            <div class="text-caption col-3">Playing from</div>
+            <q-btn-toggle
+              v-model="playing"
+              unelevated
+              size="sm"
+              color="grey-3"
+              text-color="grey-8"
+              toggle-text-color="white"
+              rounded
+              class="col-8 q-mt-md"
+              :options="[
+                {
+                  label: 'White',
+                  value: 'w',
+                  icon: 'fa-regular fa-chess-king',
+                },
+                {
+                  label: 'Black',
+                  value: 'b',
+                  icon: 'fa-solid fa-chess-king',
+                },
+              ]"
+            />
+            <!-- Level -->
+            <div class="text-caption col-3">Assistance</div>
+            <q-btn-toggle
+              v-model="level"
+              unelevated
+              size="sm"
+              color="grey-3"
+              text-color="grey-8"
+              toggle-text-color="white"
+              rounded
+              class="col-8"
+              :options="[
+                { label: 'Arrows', value: 'arrows', icon: 'arrow_forward' },
+                { label: 'Circle', value: 'circles', icon: 'circle' },
+                { label: 'None', value: 'none', icon: 'block' },
+              ]"
+            />
+            <!-- Move percentage -->
+            <div class="text-caption col-3">
+              Only use moves played more than x% of the time.
+            </div>
+            <q-slider
+              v-model="minMovePercentage"
+              class="col-6"
+              :min="0"
+              :max="50"
+              label
+              :label-value="minMovePercentage + '%'"
+            />
+            <div class="text-caption col-1">{{ minMovePercentage }}%</div>
+            <!-- Depth -->
+            <div class="text-caption col-3">
+              Number of moves to play (depth)
+            </div>
+            <q-slider v-model="depth" class="col-6" :min="1" :max="15" label />
+            <div class="text-caption col-1">
+              {{ depth }}
+            </div>
+            <!-- Timer -->
+            <div class="text-caption col-3">Autoplay delay</div>
+            <q-slider
+              v-model="timeout"
+              class="col-6"
+              :min="0"
+              :max="5000"
+              :step="100"
+            />
+            <div class="text-caption col-1">
+              {{ timeout ? timeout + "ms" : "disabled" }}
+            </div>
+            <!-- Variants -->
+            <div class="text-caption col-3">Number of variant to learn</div>
+            <q-btn-toggle
+              v-model="variants"
+              unelevated
+              size="sm"
+              color="grey-3"
+              text-color="grey-8"
+              toggle-text-color="white"
+              rounded
+              class="col-8"
+              :options="[
+                { label: 'All', value: 0 },
+                { label: '1', value: 1 },
+                { label: '2', value: 2 },
+                { label: '3', value: 3 },
+                { label: '4', value: 4 },
+                { label: '5', value: 5 },
+              ]"
+            />
+            <q-btn
+              class="col-6 offset-3"
+              label="Restore defaults"
+              flat
+              icon="settings_backup_restore"
+              color="grey"
+              @click="restoreSettings"
+            ></q-btn>
+          </q-card-section>
+        </q-card>
+      </q-dialog>
       <q-card class="q-ma-md">
         <q-inner-loading :showing="loading">
           <q-spinner-gears size="50px" color="primary" />
@@ -350,7 +403,7 @@ export default defineComponent({
     const level = ref("arrows"); // Difficulty: 'arrows' (easy, shows arrows), 'circles' (medium, show circles), 'none' (hard, shows nothing)
     const playing = ref("w"); // Player color
     const variants = ref(1); // number of player color moves to be accepted. 1 is only the most popular.
-    const depth = ref(5); // number of turns to play
+    const depth = ref(6); // number of turns to play
     const timeout = ref(1000); // ms to wait before computer playing
     const minMovePercentage = ref(10); // The minimum number of parties in which a moved is used to be considered
 
@@ -358,6 +411,7 @@ export default defineComponent({
     const showOptions = ref(false);
     const hover = ref(""); // move hovered on the list
     const showList = ref(false); // showing the list of moves
+    const showHistory = ref(false); // showing history
     const turnPlayed = ref(0);
 
     // LICHESS
@@ -424,22 +478,6 @@ export default defineComponent({
       );
       if (playing.value == game.turn() && depth.value == turnPlayed.value) {
         console.log("YOU WIN");
-        $q.dialog({
-          title: "Congratulations!",
-          message: "You won! What would you like to do now?",
-          cancel: {
-            label: "Try again",
-          },
-          ok: {
-            label: "Keep playing",
-          },
-          stackButtons: true,
-          persistent: true,
-        })
-          .onOk(() => {})
-          .onCancel(() => {
-            restart();
-          });
       }
     };
 
@@ -599,7 +637,7 @@ export default defineComponent({
       playing.value = "w";
       level.value = "arrows";
       variants.value = 1;
-      depth.value = 5;
+      depth.value = 6;
       timeout.value = 1000;
       minMovePercentage.value = 10;
     };
@@ -643,6 +681,7 @@ export default defineComponent({
       turnPlayed,
       minMovePercentage,
       restoreSettings,
+      showHistory,
     };
   },
 });
