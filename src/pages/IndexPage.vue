@@ -5,11 +5,17 @@
         <chess-board
           :orientation="orientation"
           :fen="fen"
-          @afterMove="afterMove"
+          @afterMove="move"
           :shapes="shapes"
         />
+        <q-linear-progress
+          animation-speed="500"
+          :value="turnPlayed / depth"
+          size="8px"
+          :color="turnPlayed == depth ? 'green' : 'grey-6'"
+        />
         <div class="row">
-          <q-btn size="sm" flat @click="reset" icon="first_page"></q-btn>
+          <q-btn size="sm" flat @click="restart" icon="restart_alt"></q-btn>
           <q-space />
           <q-btn
             size="sm"
@@ -25,7 +31,15 @@
             @click="showOptions = !showOptions"
             icon="settings"
           ></q-btn>
+          <q-btn
+            size="sm"
+            flat
+            :color="showList ? 'primary' : 'black'"
+            @click="showList = !showList"
+            icon="format_list_bulleted"
+          ></q-btn>
         </div>
+        <!-- History -->
         <div class="q-pa-xs">
           <q-chip
             v-for="(v, k) in historyIcons"
@@ -52,6 +66,7 @@
       <!-- Options  -->
       <q-card flat v-if="showOptions">
         <q-card-section class="row q-gutter-md">
+          <!-- Player color -->
           <div class="text-caption col-3">Playing from</div>
           <q-btn-toggle
             v-model="playing"
@@ -75,7 +90,8 @@
               },
             ]"
           />
-          <div class="text-caption col-3">Level</div>
+          <!-- Level -->
+          <div class="text-caption col-3">Assistance</div>
           <q-btn-toggle
             v-model="level"
             unelevated
@@ -91,19 +107,35 @@
               { label: 'None', value: 'none', icon: 'block' },
             ]"
           />
+          <!-- Move percentage -->
           <div class="text-caption col-3">
-            Learn responses to moves used over x% of the time
+            Only use moves played more than x% of the time.
           </div>
           <q-slider
-            v-model="lichess.minMovePercentage"
+            v-model="minMovePercentage"
             class="col-8"
             :min="0"
             :max="50"
             label
+            :label-value="minMovePercentage + '%'"
           />
-          <div class="text-caption col-3">Number of moves to learn (depth)</div>
-          <q-slider v-model="depth" class="col-8" :min="0" :max="50" label />
-          <div class="text-caption col-3">Variants</div>
+          <!-- Depth -->
+          <div class="text-caption col-3">Number of moves to play (depth)</div>
+          <q-slider v-model="depth" class="col-8" :min="1" :max="15" label />
+          <!-- Timer -->
+          <div class="text-caption col-3">Autoplay delay</div>
+          <q-slider
+            v-model="timeout"
+            class="col-6"
+            :min="0"
+            :max="5000"
+            :step="100"
+          />
+          <div class="text-caption col-1">
+            {{ timeout ? timeout + "ms" : "disabled" }}
+          </div>
+          <!-- Variants -->
+          <div class="text-caption col-3">Number of variant to learn</div>
           <q-btn-toggle
             v-model="variants"
             unelevated
@@ -114,6 +146,7 @@
             rounded
             class="col-8"
             :options="[
+              { label: 'All', value: 0 },
               { label: '1', value: 1 },
               { label: '2', value: 2 },
               { label: '3', value: 3 },
@@ -121,6 +154,14 @@
               { label: '5', value: 5 },
             ]"
           />
+          <q-btn
+            class="col-6 offset-3"
+            label="Restore defaults"
+            flat
+            icon="settings_backup_restore"
+            color="grey"
+            @click="restoreSettings"
+          ></q-btn>
         </q-card-section>
       </q-card>
       <q-card class="q-ma-md">
@@ -137,14 +178,14 @@
           </div>
         </q-card-section>
         <!-- Games -->
-        <q-list v-if="game.history().length == 0">
+        <q-list v-if="game.history().length == 0" separator>
           <q-item
             clickable
             v-for="(m, i) in possibleMoves"
             :key="i"
             @mouseover="hover = m.san"
             @mouseleave="hover = ''"
-            @click="afterMove(m.from, m.to)"
+            @click="move(m.from, m.to)"
             class="bg-green"
           >
             <!-- Avatar -->
@@ -197,14 +238,16 @@
           </q-item>
         </q-list>
         <!-- Moves -->
-        <q-list v-if="lichess.positions[fen] && game.history().length > 0">
+        <q-list
+          v-if="showList && lichess.positions[fen] && game.history().length > 0"
+        >
           <q-item
             clickable
             v-for="(m, i) in possibleMoves"
             :key="i"
             @mouseover="hover = m.san"
             @mouseleave="hover = ''"
-            @click="afterMove(m.from, m.to)"
+            @click="move(m.from, m.to)"
           >
             <!-- Avatar -->
             <q-item-section avatar>
@@ -249,7 +292,7 @@
                 </div>
               </q-item-label>
             </q-item-section>
-            <q-item-section avatar>
+            <!-- <q-item-section avatar>
               <Doughnut
                 :width="60"
                 :chartData="{
@@ -270,7 +313,7 @@
                   ],
                 }"
               />
-            </q-item-section>
+            </q-item-section> -->
           </q-item>
         </q-list>
       </q-card>
@@ -283,6 +326,7 @@ import { defineComponent, ref, reactive, computed, watch } from "vue";
 import { Chess } from "chess.js";
 import { useLichess } from "stores/lichess";
 import { _ } from "lodash";
+import { useQuasar } from "quasar";
 
 import { Chart, registerables } from "chart.js";
 import { Doughnut } from "vue-chartjs";
@@ -294,6 +338,10 @@ export default defineComponent({
   name: "IndexPage",
   components: { Doughnut },
   setup() {
+    // Quasar
+    const $q = useQuasar();
+
+    // GAME
     const orientation = ref("w");
     const game = reactive(new Chess());
     const fen = ref(game.fen());
@@ -303,6 +351,14 @@ export default defineComponent({
     const playing = ref("w"); // Player color
     const variants = ref(1); // number of player color moves to be accepted. 1 is only the most popular.
     const depth = ref(5); // number of turns to play
+    const timeout = ref(1000); // ms to wait before computer playing
+    const minMovePercentage = ref(10); // The minimum number of parties in which a moved is used to be considered
+
+    // UI
+    const showOptions = ref(false);
+    const hover = ref(""); // move hovered on the list
+    const showList = ref(false); // showing the list of moves
+    const turnPlayed = ref(0);
 
     // LICHESS
     const lichess = useLichess();
@@ -319,10 +375,28 @@ export default defineComponent({
       fen.value = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
       game.load(fen.value);
     };
+    const restart = () => {
+      var g = new Chess();
+      game.load(g.fen());
+      fen.value = game.fen();
+      history.value = game.history({ verbose: true });
+      turnPlayed.value = 0;
+    };
 
-    const afterMove = (from, to, metadata) => {
+    const move = (from, to, metadata) => {
       // Nothing happens because this is called a second time probably
       if (!from || !to) return;
+
+      // Is it a valid move ?
+      if (!possibleMoves.value.find((m) => m.from == from && m.to == to)) {
+        if (playing.value != game.turn()) return;
+        else {
+          console.log("ERROR");
+          return;
+        }
+      }
+
+      // Making the move
       var m = game.move({ from: from, to: to });
       if (!m) {
         // If m is null the move was not valid
@@ -336,7 +410,37 @@ export default defineComponent({
       fen.value = game.fen();
       history.value = game.history({ verbose: true });
 
-      // Game logic
+      // Play computer
+      if (game.turn() != playing.value) {
+        if (timeout.value) {
+          var m = _.sample(possibleMoves.value);
+          setTimeout(() => move(m.from, m.to), timeout.value);
+        }
+      }
+
+      // Won ?
+      turnPlayed.value = Math.floor(
+        (game.history().length - (playing.value == "w" ? 1 : 0)) / 2
+      );
+      if (playing.value == game.turn() && depth.value == turnPlayed.value) {
+        console.log("YOU WIN");
+        $q.dialog({
+          title: "Congratulations!",
+          message: "You won! What would you like to do now?",
+          cancel: {
+            label: "Try again",
+          },
+          ok: {
+            label: "Keep playing",
+          },
+          stackButtons: true,
+          persistent: true,
+        })
+          .onOk(() => {})
+          .onCancel(() => {
+            restart();
+          });
+      }
     };
 
     const iconName = (name) =>
@@ -373,7 +477,10 @@ export default defineComponent({
     // Possible Moves
     const possibleMoves = computed(() => {
       var moves = game.moves({ verbose: true });
-      var filteredMoves = lichess.filteredMoves(fen.value);
+      var filteredMoves = lichess.filteredMoves(
+        fen.value,
+        minMovePercentage.value
+      );
       var san = filteredMoves.map((m) => m.san);
       moves = moves.filter((m) => san.includes(m.san));
       moves.forEach((move) => {
@@ -393,14 +500,18 @@ export default defineComponent({
         getPosition(g.fen());
       });
       // If playing color, keep only 'variants' moves
-      if (game.turn() == playing.value) moves = moves.slice(0, variants.value);
+      if (
+        game.history().length &&
+        game.turn() == playing.value &&
+        variants.value
+      )
+        moves = moves.slice(0, variants.value);
       // return moves
       return moves;
     });
 
     const lastPossibleMoves = ref([]);
     watch(possibleMoves, (newValue, oldValue) => {
-      console.log(oldValue, newValue);
       if (!_.isEqual(newValue, oldValue)) lastPossibleMoves.value = oldValue;
     });
 
@@ -467,19 +578,50 @@ export default defineComponent({
       //   paleRed: { key: 'pr', color: '#882020', opacity: 0.4, lineWidth: 15 },
     });
 
-    // UI
-    const showOptions = ref(false);
-    const hover = ref(""); // move hovered on the list
-
     // Change orientation upon changing playing color
     watch(playing, () => (orientation.value = playing.value));
+
+    // SAVE SETTINGS
+    watch(
+      [playing, level, variants, depth, timeout, minMovePercentage],
+      (v) => {
+        $q.localStorage.set("settings", {
+          playing: playing.value,
+          level: level.value,
+          variants: variants.value,
+          depth: depth.value,
+          timeout: timeout.value,
+          minMovePercentage: minMovePercentage.value,
+        });
+      }
+    );
+    const restoreSettings = () => {
+      playing.value = "w";
+      level.value = "arrows";
+      variants.value = 1;
+      depth.value = 5;
+      timeout.value = 1000;
+      minMovePercentage.value = 10;
+    };
+    const loadSettings = () => {
+      if ($q.localStorage.has("settings")) {
+        var s = $q.localStorage.getItem("settings");
+        playing.value = s.playing;
+        level.value = s.level;
+        variants.value = s.variants;
+        depth.value = s.depth;
+        timeout.value = s.timeout;
+        minMovePercentage.value = s.minMovePercentage;
+      }
+    };
+    loadSettings();
 
     return {
       orientation,
       switchOrientation,
       reset,
       game,
-      afterMove,
+      move,
       shapes,
       level,
       fen,
@@ -495,6 +637,12 @@ export default defineComponent({
       possibleMoves,
       hover,
       iconName,
+      timeout,
+      showList,
+      restart,
+      turnPlayed,
+      minMovePercentage,
+      restoreSettings,
     };
   },
 });

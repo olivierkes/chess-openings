@@ -13,7 +13,6 @@ export const useLichess = defineStore("lichess", {
     loading: false,
     positions: {},
     counter: 1,
-    minMovePercentage: 10, // The minimum number of parties in which a moved is used to be considered
   }),
 
   getters: {
@@ -44,8 +43,8 @@ export const useLichess = defineStore("lichess", {
       };
     },
     filteredMoves(state) {
-      return (fen) =>
-        this.moves(fen).filter((m) => m.percentage > state.minMovePercentage);
+      return (fen, minMovePercentage) =>
+        this.moves(fen).filter((m) => m.percentage > minMovePercentage);
     },
     moveName(state) {
       return (fen, san) => {

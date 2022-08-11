@@ -104,6 +104,7 @@ export default {
 
     const afterMove = (from, to, metadata) => {
       ctx.emit("afterMove", from, to, metadata);
+      setBoard();
     };
 
     onMounted(() => {
