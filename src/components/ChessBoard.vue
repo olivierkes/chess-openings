@@ -99,7 +99,7 @@ export default {
     };
     const setShapes = () => {
       ground.setShapes(props.shapes);
-      ground.redrawAll();
+      // ground.redrawAll();
     };
 
     const afterMove = (from, to, metadata) => {
@@ -111,6 +111,7 @@ export default {
       const config = {
         fen: props.fen,
         coordinates: true,
+        blockTouchScroll: true,
         movable: {
           free: false,
           events: {
