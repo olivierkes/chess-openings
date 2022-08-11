@@ -169,28 +169,30 @@
                 </div>
                 {{ m.total }} parties
               </q-item-label>
+            </q-item-section>
 
-              <!-- Win -->
-              <q-item-label caption>
-                <div
-                  class="bg-grey-2 float-left text-center text-grey-10"
-                  :style="{ width: m.white + '%' }"
-                >
-                  {{ parseFloat(m.white).toFixed(1) + "%" }}
-                </div>
-                <div
-                  class="bg-grey float-left text-center"
-                  :style="{ width: m.draws + '%' }"
-                >
-                  {{ parseFloat(m.draws).toFixed(1) + "%" }}
-                </div>
-                <div
-                  class="bg-grey-10 float-left text-center text-white"
-                  :style="{ width: m.black + '%' }"
-                >
-                  {{ parseFloat(m.black).toFixed(1) + "%" }}
-                </div>
-              </q-item-label>
+            <!-- Win -->
+            <q-item-section avatar>
+              <Doughnut
+                :width="80"
+                :chartData="{
+                  datasets: [
+                    {
+                      data: [m.percentage, 100 - m.percentage],
+                      borderWidth: 0,
+                      backgroundColor: ['green', 'transparent'],
+                      cutout: '30%',
+                    },
+                    {
+                      data: [m.white, m.draws, m.black],
+                      borderWidth: 0,
+                      backgroundColor: ['white', 'grey', 'black'],
+                      cutout: '0',
+                      radius: '130%',
+                    },
+                  ],
+                }"
+              />
             </q-item-section>
           </q-item>
         </q-list>
@@ -212,7 +214,7 @@
             <!-- Percentage -->
             <q-item-section>
               <!-- Name -->
-              <q-item-label caption v-if="m.name">
+              <q-item-label v-if="m.name">
                 <q-icon :name="iconName(m.piece)"></q-icon> {{ m.name }}
               </q-item-label>
               <q-item-label caption class="full-width">
@@ -247,6 +249,28 @@
                 </div>
               </q-item-label>
             </q-item-section>
+            <q-item-section avatar>
+              <Doughnut
+                :width="60"
+                :chartData="{
+                  datasets: [
+                    {
+                      data: [m.percentage, 100 - m.percentage],
+                      borderWidth: 0,
+                      backgroundColor: ['green', 'transparent'],
+                      cutout: '30%',
+                    },
+                    {
+                      data: [m.white, m.draws, m.black],
+                      borderWidth: 0,
+                      backgroundColor: ['white', 'grey', 'black'],
+                      cutout: '0',
+                      radius: '130%',
+                    },
+                  ],
+                }"
+              />
+            </q-item-section>
           </q-item>
         </q-list>
       </q-card>
@@ -260,8 +284,15 @@ import { Chess } from "chess.js";
 import { useLichess } from "stores/lichess";
 import { _ } from "lodash";
 
+import { Chart, registerables } from "chart.js";
+import { Doughnut } from "vue-chartjs";
+Chart.register(...registerables);
+// Chart.defaults.plugins.tooltip.enabled = false;
+Chart.defaults.interaction.events = [];
+
 export default defineComponent({
   name: "IndexPage",
+  components: { Doughnut },
   setup() {
     const orientation = ref("w");
     const game = reactive(new Chess());
