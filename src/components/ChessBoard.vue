@@ -52,6 +52,10 @@ export default {
         setBoard();
       }
     );
+    watch(
+      () => props.shapes,
+      () => setBoard()
+    );
 
     const possibleMoves = () => {
       const dests = new Map();
@@ -90,9 +94,12 @@ export default {
         },
       };
       ground.set(config);
+      setShapes();
+      ctx.emit("afterMove");
+    };
+    const setShapes = () => {
       ground.setShapes(props.shapes);
       ground.redrawAll();
-      ctx.emit("afterMove");
     };
 
     const afterMove = (from, to, metadata) => {
@@ -105,7 +112,17 @@ export default {
         coordinates: true,
         movable: {
           free: false,
-          events: { after: afterMove },
+          events: {
+            after: afterMove,
+          },
+        },
+        events: {
+          select: () => {
+            setShapes();
+          },
+        },
+        drawable: {
+          eraseOnClick: false,
         },
       };
       ground = Chessground(board.value, config);

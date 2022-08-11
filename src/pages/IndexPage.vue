@@ -9,13 +9,14 @@
           :shapes="shapes"
         />
         <div class="row">
+          <q-btn size="sm" flat @click="reset" icon="first_page"></q-btn>
+          <q-space />
           <q-btn
             size="sm"
             flat
             @click="switchOrientation"
             icon="cached"
           ></q-btn>
-          <q-btn size="sm" flat @click="reset" icon="first_page"></q-btn>
           <q-space />
           <q-btn
             size="sm"
@@ -58,12 +59,12 @@
             :options="[
               {
                 label: 'White',
-                value: 'white',
+                value: 'w',
                 icon: 'fa-regular fa-chess-king',
               },
               {
                 label: 'Black',
-                value: 'black',
+                value: 'b',
                 icon: 'fa-solid fa-chess-king',
               },
             ]"
@@ -84,24 +85,18 @@
               { label: 'None', value: 'none', icon: 'block' },
             ]"
           />
-          <div class="text-caption col-3">Number of moves</div>
-          <q-btn-toggle
-            v-model="moves"
-            unelevated
-            size="sm"
-            color="grey-3"
-            text-color="grey-8"
-            toggle-text-color="white"
-            rounded
+          <div class="text-caption col-3">
+            Learn responses to moves used over x% of the time
+          </div>
+          <q-slider
+            v-model="lichess.minMovePercentage"
             class="col-8"
-            :options="[
-              { label: '1', value: 1 },
-              { label: '2', value: 2 },
-              { label: '3', value: 3 },
-              { label: '4', value: 4 },
-              { label: '5', value: 5 },
-            ]"
+            :min="0"
+            :max="50"
+            label
           />
+          <div class="text-caption col-3">Number of moves to learn (depth)</div>
+          <q-slider v-model="depth" class="col-8" :min="0" :max="50" label />
           <div class="text-caption col-3">Variants</div>
           <q-btn-toggle
             v-model="variants"
@@ -135,45 +130,52 @@
         </q-card-section>
         <!-- Moves -->
         <q-list v-if="lichess.positions[fen]">
-          <q-item
-            clickable
-            v-for="(m, i) in lichess.positions[fen].moves"
-            :key="i"
-          >
+          <q-item clickable v-for="(m, i) in possibleMoves" :key="i">
+            <!-- Avatar -->
             <q-item-section avatar>
               <q-avatar color="blue text-white">{{ m.san }}</q-avatar>
             </q-item-section>
 
+            <!-- Percentage -->
             <q-item-section>
-              <q-item-label>
+              <!-- Name -->
+              <q-item-label caption v-if="m.name">
+                {{ m.name }}
+              </q-item-label>
+              <q-item-label caption class="full-width">
+                <div
+                  class="bg-green-10 float-left text-center text-white q-mr-sm"
+                  :style="{ width: m.percentage + '%' }"
+                >
+                  {{ m.percentage.toFixed(1) + "%" }}
+                </div>
+                {{ m.total }} parties
+              </q-item-label>
+
+              <!-- Win -->
+              <q-item-label caption>
                 <div
                   class="bg-grey-2 float-left text-center text-grey-10"
-                  :style="{ width: movePercentage(m).white * 100 + '%' }"
+                  :style="{ width: m.white + '%' }"
                 >
-                  {{ parseFloat(movePercentage(m).white).toFixed(2) + "%" }}
+                  {{ parseFloat(m.white).toFixed(1) + "%" }}
                 </div>
                 <div
                   class="bg-grey float-left text-center"
-                  :style="{ width: movePercentage(m).draws * 100 + '%' }"
+                  :style="{ width: m.draws + '%' }"
                 >
-                  {{ parseFloat(movePercentage(m).draws).toFixed(2) + "%" }}
+                  {{ parseFloat(m.draws).toFixed(1) + "%" }}
                 </div>
                 <div
                   class="bg-grey-10 float-left text-center text-white"
-                  :style="{ width: movePercentage(m).black * 100 + '%' }"
+                  :style="{ width: m.black + '%' }"
                 >
-                  {{ parseFloat(movePercentage(m).black).toFixed(2) + "%" }}
+                  {{ parseFloat(m.black).toFixed(1) + "%" }}
                 </div>
               </q-item-label>
-              <q-item-label caption
-                >{{ movePercentage(m).total }} parties</q-item-label
-              >
             </q-item-section>
           </q-item>
         </q-list>
-        <q-card-section>
-          {{ lichess.positions[fen] }}
-        </q-card-section>
       </q-card>
     </div>
   </q-page>
@@ -199,16 +201,8 @@ export default defineComponent({
     const getPosition = (fen) => lichess.fetch(fen);
     getPosition(fen.value);
     watch(fen, () => getPosition(fen.value));
-    const movePercentage = (m) => {
-      var t = m["white"] + m["black"] + m["draws"];
-      return {
-        white: m["white"] / t,
-        draws: m["draws"] / t,
-        black: m["black"] / t,
-        total: t,
-      };
-    };
 
+    // TOOLS
     const switchOrientation = () => {
       orientation.value = orientation.value === "white" ? "black" : "white";
     };
@@ -220,13 +214,14 @@ export default defineComponent({
     const afterMove = (from, to, metadata) => {
       var m = game.move({ from: from, to: to });
       if (!m) {
-        // If m is null the move was not valid
-        // Let's assume it was a promotion
-        game.move({
-          from: from,
-          to: to,
-          promotion: "q",
-        });
+        // // If m is null the move was not valid
+        // // Let's assume it was a promotion
+        // game.move({
+        //   from: from,
+        //   to: to,
+        //   promotion: "q",
+        // });
+        return;
       }
       fen.value = game.fen();
       history.value = game.history({ verbose: true });
@@ -260,13 +255,63 @@ export default defineComponent({
       game.load_pgn(g.pgn());
     };
 
-    const shapes = reactive([]); // { orig: "a1", dest: "h8", brush: "red" }
+    // GAME LOGIC
+    const possibleMoves = computed(() => {
+      var moves = game.moves({ verbose: true });
+      var filteredMoves = lichess.filteredMoves(fen.value);
+      var san = filteredMoves.map((m) => m.san);
+      moves = moves.filter((m) => san.includes(m.san));
+      moves.forEach((move) => {
+        Object.assign(
+          move,
+          filteredMoves.find((m) => m.san == move.san)
+        );
+      });
+      // Sort by percentage
+      moves = moves.sort((a, b) => b.percentage - a.percentage);
+      // If playing color, keep only 'variants' moves
+      if (game.turn() == playing.value) moves = moves.slice(0, variants.value);
+      // Prefetch those moves
+      moves.forEach((m) => {
+        const g = new Chess();
+        g.load(fen.value);
+        g.move(m.san);
+        getPosition(g.fen());
+      });
+      // return moves
+      return moves;
+    });
+
+    // { orig: "a1", dest: "h8", brush: "red" }
+    const shapes = computed(() => {
+      var color = game.turn() == playing.value ? "green" : "red";
+      if (level.value == "none") return [];
+      else if (level.value == "circles")
+        return possibleMoves.value.map((m) => ({
+          orig: m.from,
+          brush: color,
+        }));
+      else
+        return possibleMoves.value.map((m) => ({
+          orig: m.from,
+          dest: m.to,
+          brush: color,
+        }));
+      // brushes: {
+      //   green: { key: 'g', color: '#15781B', opacity: 1, lineWidth: 10 },
+      //   red: { key: 'r', color: '#882020', opacity: 1, lineWidth: 10 },
+      //   blue: { key: 'b', color: '#003088', opacity: 1, lineWidth: 10 },
+      //   yellow: { key: 'y', color: '#e68f00', opacity: 1, lineWidth: 10 },
+      //   paleBlue: { key: 'pb', color: '#003088', opacity: 0.4, lineWidth: 15 },
+      //   paleGreen: { key: 'pg', color: '#15781B', opacity: 0.4, lineWidth: 15 },
+      //   paleRed: { key: 'pr', color: '#882020', opacity: 0.4, lineWidth: 15 },
+    });
 
     // OPTIONS
     const level = ref("arrows");
-    const playing = ref("white");
-    const moves = ref(3);
+    const playing = ref("w");
     const variants = ref(1);
+    const depth = ref(1);
     const showOptions = ref(false);
 
     return {
@@ -283,11 +328,11 @@ export default defineComponent({
       restoreHistory,
       loading,
       lichess,
-      movePercentage,
       playing,
-      moves,
       variants,
       showOptions,
+      depth,
+      possibleMoves,
     };
   },
 });
