@@ -12,7 +12,7 @@
           animation-speed="500"
           :value="turnPlayed / depth"
           size="8px"
-          :color="turnPlayed == depth ? 'green' : 'grey-6'"
+          :color="errors ? 'orange' : 'green'"
         />
         <div class="row">
           <q-btn size="sm" flat @click="restart" icon="first_page"></q-btn>
@@ -23,7 +23,7 @@
           <q-btn
             size="sm"
             flat
-            :disable="!game.history().length"
+            v-if="game.history().length"
             :color="showList ? 'primary' : 'black'"
             @click="showList = !showList"
             icon="format_list_bulleted"
@@ -31,7 +31,7 @@
           <q-btn
             size="sm"
             flat
-            :disabled="!history.length"
+            v-if="history.length"
             :color="showHistory ? 'primary' : 'black'"
             @click="showHistory = !showHistory"
             icon="history"
@@ -48,7 +48,7 @@
             <q-btn
               size="sm"
               flat
-              icon="circle"
+              icon="radio_button_unchecked"
               :color="level == 'circles' ? 'primary' : 'black'"
               @click="level = 'circles'"
             />
@@ -86,17 +86,30 @@
         </div>
       </q-card>
       <!-- You won ! -->
-      <q-card v-if="turnPlayed >= depth" class="q-ma-md bg-green" square>
+      <q-card
+        v-if="turnPlayed >= depth"
+        :class="'q-ma-md ' + (errors ? 'bg-orange' : 'bg-green')"
+        square
+      >
         <q-card-section>
-          <div class="text-h6">
-            <q-icon name="star" size="md"></q-icon> Congratulations, you won !
+          <div>
             <q-btn
               flat
               class="float-right"
               icon="restart_alt"
               @click="restart"
-              label="Restart"
+              :label="errors ? 'Try again' : 'Restart'"
             />
+            <div class="text-h6">
+              <q-icon name="star" size="md" v-if="errors == 0"></q-icon>
+              Congratulations !
+            </div>
+            <div v-if="errors == 0">You won !</div>
+            <div v-else>
+              You finished, but you made {{ errors }} mistake{{
+                errors > 1 ? "s" : ""
+              }}.
+            </div>
           </div>
         </q-card-section>
       </q-card>
@@ -141,7 +154,11 @@
               class="col-8"
               :options="[
                 { label: 'Arrows', value: 'arrows', icon: 'arrow_forward' },
-                { label: 'Circle', value: 'circles', icon: 'circle' },
+                {
+                  label: 'Circle',
+                  value: 'circles',
+                  icon: 'radio_button_unchecked',
+                },
                 { label: 'None', value: 'none', icon: 'block' },
               ]"
             />
@@ -391,6 +408,7 @@ export default defineComponent({
     const orientation = ref("w");
     const game = reactive(new Chess());
     const fen = ref(game.fen());
+    const errors = ref(0);
 
     // OPTIONS
     const level = ref("arrows"); // Difficulty: 'arrows' (easy, shows arrows), 'circles' (medium, show circles), 'none' (hard, shows nothing)
@@ -418,16 +436,13 @@ export default defineComponent({
     const switchOrientation = () => {
       orientation.value = orientation.value === "w" ? "b" : "w";
     };
-    const reset = () => {
-      fen.value = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-      game.load(fen.value);
-    };
     const restart = () => {
       var g = new Chess();
       game.load(g.fen());
       fen.value = game.fen();
       history.value = game.history({ verbose: true });
       turnPlayed.value = 0;
+      errors.value = 0;
     };
 
     const move = (from, to, metadata) => {
@@ -439,6 +454,7 @@ export default defineComponent({
         if (playing.value != game.turn()) return;
         else {
           console.log("ERROR");
+          errors.value += 1;
           return;
         }
       }
@@ -650,7 +666,6 @@ export default defineComponent({
     return {
       orientation,
       switchOrientation,
-      reset,
       game,
       move,
       shapes,
@@ -675,6 +690,7 @@ export default defineComponent({
       restoreSettings,
       showHistory,
       ui,
+      errors,
     };
   },
 });
