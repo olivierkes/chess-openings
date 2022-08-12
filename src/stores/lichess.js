@@ -34,7 +34,7 @@ export const useLichess = defineStore("lichess", {
             white: (m.white / t) * 100,
             draws: (m.draws / t) * 100,
             black: (m.black / t) * 100,
-            total: t * 100,
+            total: t,
             name: this.moveName(fen, m.san),
             percentage: (t / this.totalMoves(fen)) * 100,
           };
@@ -44,7 +44,9 @@ export const useLichess = defineStore("lichess", {
     },
     filteredMoves(state) {
       return (fen, minMovePercentage) =>
-        this.moves(fen).filter((m) => m.percentage > minMovePercentage);
+        this.moves(fen).filter(
+          (m) => m.percentage > minMovePercentage && m.total >= 50
+        );
     },
     moveName(state) {
       return (fen, san) => {

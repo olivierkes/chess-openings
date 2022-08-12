@@ -15,7 +15,7 @@
           :color="turnPlayed == depth ? 'green' : 'grey-6'"
         />
         <div class="row">
-          <q-btn size="sm" flat @click="restart" icon="restart_alt"></q-btn>
+          <q-btn size="sm" flat @click="restart" icon="first_page"></q-btn>
           <q-space />
           <q-btn size="sm" flat @click="switchOrientation" icon="cached">
             <q-tooltip>Switch side</q-tooltip>
@@ -60,14 +60,6 @@
               @click="level = 'none'"
             />
           </q-btn-group>
-          <q-space />
-          <q-btn
-            size="sm"
-            flat
-            :color="showOptions ? 'primary' : 'black'"
-            @click="showOptions = !showOptions"
-            icon="settings"
-          ></q-btn>
         </div>
         <!-- History -->
         <div class="q-pa-xs" v-if="showHistory">
@@ -109,8 +101,8 @@
         </q-card-section>
       </q-card>
       <!-- Options  -->
-      <q-dialog v-model="showOptions">
-        <q-card flat v-if="showOptions">
+      <q-dialog v-model="ui.showOptions">
+        <q-card flat v-if="ui.showOptions">
           <q-card-section class="row q-gutter-md">
             <!-- Player color -->
             <div class="text-caption col-3">Playing from</div>
@@ -378,6 +370,7 @@
 import { defineComponent, ref, reactive, computed, watch } from "vue";
 import { Chess } from "chess.js";
 import { useLichess } from "stores/lichess";
+import { useUI } from "stores/ui";
 import { _ } from "lodash";
 import { useQuasar } from "quasar";
 
@@ -408,7 +401,7 @@ export default defineComponent({
     const minMovePercentage = ref(10); // The minimum number of parties in which a moved is used to be considered
 
     // UI
-    const showOptions = ref(false);
+    const ui = useUI();
     const hover = ref(""); // move hovered on the list
     const showList = ref(false); // showing the list of moves
     const showHistory = ref(false); // showing history
@@ -670,7 +663,6 @@ export default defineComponent({
       lichess,
       playing,
       variants,
-      showOptions,
       depth,
       possibleMoves,
       hover,
@@ -682,6 +674,7 @@ export default defineComponent({
       minMovePercentage,
       restoreSettings,
       showHistory,
+      ui,
     };
   },
 });
