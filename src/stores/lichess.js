@@ -3,6 +3,7 @@ import { LocalStorage, TouchRepeat } from "quasar";
 import axios from "axios";
 import { generateCodeFrame } from "vue/compiler-sfc";
 import { Chess } from "chess.js";
+import { startCase } from "lodash";
 
 const URL = `https://explorer.lichess.ovh/masters?fen=%FEN%`;
 
@@ -13,6 +14,8 @@ export const useLichess = defineStore("lichess", {
     loading: false,
     positions: {},
     counter: 1,
+    // caches
+    movesCache: {},
   }),
 
   getters: {
@@ -23,9 +26,16 @@ export const useLichess = defineStore("lichess", {
       ),
     moves(state) {
       return (fen) => {
-        // Check if position is in cach
+        // Check if position is stored
         if (!state.positions[fen]) return [];
+
+        // Check if position is cached
+        if (fen in state.movesCache) {
+          return state.movesCache[fen];
+        }
+
         var moves = state.positions[fen].moves || [];
+
         moves = moves.map((m) => {
           var t = m["white"] + m["black"] + m["draws"];
 
@@ -39,14 +49,19 @@ export const useLichess = defineStore("lichess", {
             percentage: (t / this.totalMoves(fen)) * 100,
           };
         });
+
+        // Filtered rarely played moves
+        moves = moves.filter((m) => m.total >= 50);
+
+        // Store in cache if all the names are resolved
+        if (moves.every((m) => m.name != false)) state.movesCache[fen] = moves;
+
         return moves;
       };
     },
     filteredMoves(state) {
       return (fen, minMovePercentage) =>
-        this.moves(fen).filter(
-          (m) => m.percentage > minMovePercentage && m.total >= 50
-        );
+        this.moves(fen).filter((m) => m.percentage > minMovePercentage);
     },
     moveName(state) {
       return (fen, san) => {
@@ -57,9 +72,11 @@ export const useLichess = defineStore("lichess", {
           // Not sure why I have to do that, but seems to work
           this.positions[fen2] = LocalStorage.getItem(fen2);
         var name = "";
-        if (state.positions[fen2] && state.positions[fen2].opening)
-          name = state.positions[fen2].opening.name;
-        return name;
+        if (state.positions[fen2])
+          return state.positions[fen2].opening
+            ? state.positions[fen2].opening.name
+            : "";
+        else return false;
       };
     },
   },
