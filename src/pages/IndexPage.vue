@@ -15,51 +15,107 @@
           :color="errors ? 'orange' : 'green'"
         />
         <div class="row">
-          <q-btn size="sm" flat @click="restart" icon="first_page"></q-btn>
+          <q-btn
+            size="sm"
+            dense
+            flat
+            @click="restart"
+            icon="first_page"
+          ></q-btn>
+          <q-btn
+            size="sm"
+            dense
+            flat
+            icon="navigate_before"
+            @click="restoreHistory(game.history().length - 2)"
+            :disable="game.history().length < 2"
+          ></q-btn>
+          <q-btn
+            size="sm"
+            flat
+            dense
+            icon="navigate_next"
+            @click="restoreHistory(game.history().length)"
+            :disable="game.history().length >= history.length"
+          ></q-btn>
+          <q-btn
+            size="sm"
+            flat
+            dense
+            icon="last_page"
+            @click="restoreHistory(history.length)"
+            :disable="game.history().length >= history.length"
+          ></q-btn>
           <q-space />
-          <q-btn size="sm" flat @click="switchOrientation" icon="cached">
+          <q-btn dense size="sm" flat @click="switchOrientation" icon="cached">
             <q-tooltip>Switch side</q-tooltip>
           </q-btn>
+          <q-space />
           <q-btn
+            dense
             size="sm"
             flat
             v-if="game.history().length"
             :color="showList ? 'primary' : 'black'"
             @click="showList = !showList"
             icon="format_list_bulleted"
-          ></q-btn>
+          >
+            <q-tooltip>Show move list</q-tooltip>
+          </q-btn>
           <q-btn
+            dense
             size="sm"
             flat
             v-if="history.length"
             :color="showHistory ? 'primary' : 'black'"
             @click="showHistory = !showHistory"
             icon="history"
-          ></q-btn>
-          <q-space />
-          <q-btn-group flat dense>
-            <q-btn
-              size="sm"
-              flat
-              icon="arrow_forward"
-              :color="level == 'arrows' ? 'primary' : 'black'"
-              @click="level = 'arrows'"
-            />
-            <q-btn
-              size="sm"
-              flat
-              icon="radio_button_unchecked"
-              :color="level == 'circles' ? 'primary' : 'black'"
-              @click="level = 'circles'"
-            />
-            <q-btn
-              size="sm"
-              flat
-              icon="block"
-              :color="level == 'none' ? 'primary' : 'black'"
-              @click="level = 'none'"
-            />
-          </q-btn-group>
+          >
+            <q-tooltip>Show history</q-tooltip>
+          </q-btn>
+          <q-btn-dropdown
+            dense
+            size="sm"
+            flat
+            :icon="
+              {
+                arrows: 'arrow_forward',
+                circles: 'radio_button_unchecked',
+                none: 'block',
+              }[level]
+            "
+          >
+            <q-list>
+              <q-item-label header>Difficulty</q-item-label>
+              <q-item clickable flat @click="level = 'arrows'">
+                <q-item-section avatar>
+                  <q-icon
+                    name="arrow_forward"
+                    :color="level == 'arrows' ? 'primary' : 'black'"
+                  ></q-icon>
+                </q-item-section>
+                <q-item-section>Show full move</q-item-section>
+              </q-item>
+              <q-item clickable flat @click="level = 'circles'">
+                <q-item-section avatar>
+                  <q-icon
+                    name="radio_button_unchecked"
+                    :color="level == 'circles' ? 'primary' : 'black'"
+                  ></q-icon>
+                </q-item-section>
+                <q-item-section>Hint piece</q-item-section>
+              </q-item>
+              <q-item flat clickable @click="level = 'none'">
+                <q-item-section avatar>
+                  <q-icon
+                    name="block"
+                    :color="level == 'none' ? 'primary' : 'black'"
+                  ></q-icon>
+                </q-item-section>
+                <q-item-section>Show nothing</q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
         </div>
         <!-- History -->
         <div class="q-pa-xs" v-if="showHistory">
@@ -116,7 +172,7 @@
       <!-- Options  -->
       <q-dialog v-model="ui.showOptions">
         <q-card flat v-if="ui.showOptions">
-          <q-card-section class="row q-gutter-md">
+          <q-card-section class="row items-center q-gutter-md">
             <!-- Player color -->
             <div class="text-caption col-3">Playing from</div>
             <q-btn-toggle
@@ -184,16 +240,18 @@
               {{ depth }}
             </div>
             <!-- Timer -->
-            <div class="text-caption col-3">Autoplay delay</div>
+            <q-checkbox v-model="ui.autoplay" class="col-1" />
+            <div class="text-caption col-2">Autoplay</div>
             <q-slider
               v-model="timeout"
               class="col-6"
               :min="0"
               :max="5000"
               :step="100"
+              :disable="!ui.autoplay"
             />
-            <div class="text-caption col-1">
-              {{ timeout ? timeout + "ms" : "disabled" }}
+            <div class="text-caption col-1 disabled">
+              {{ timeout + "ms" }}
             </div>
             <!-- Variants -->
             <div class="text-caption col-3">Number of variant to learn</div>
@@ -475,7 +533,7 @@ export default defineComponent({
 
       // Play computer
       if (game.turn() != playing.value) {
-        if (timeout.value) {
+        if (ui.autoplay) {
           var m = _.sample(possibleMoves.value);
           setTimeout(() => move(m.from, m.to), timeout.value);
         }
