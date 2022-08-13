@@ -290,12 +290,24 @@
         </q-inner-loading>
         <!-- Name -->
         <q-card-section
-          class="bg-primary text-white"
+          class="bg-primary text-white q-pa-sm row items-center no-wrap"
           v-if="lichess.positions[fen] && lichess.positions[fen].opening"
         >
-          <div class="text-h6">
+          <div class="col text-subtitle1">
             {{ lichess.positions[fen].opening.name }}
           </div>
+          <q-btn
+            flat
+            class="col-auto"
+            icon="info"
+            @click="showWikiBooks = !showWikiBooks"
+          >
+            <q-tooltip>Show info from Wikibooks</q-tooltip>
+          </q-btn>
+        </q-card-section>
+        <!-- WIKIBOOKS -->
+        <q-card-section v-if="showWikiBooks">
+          <wiki-books :history="game.history()"></wiki-books>
         </q-card-section>
         <!-- Games -->
         <q-list v-if="game.history().length == 0" separator>
@@ -446,6 +458,7 @@ import { defineComponent, ref, reactive, computed, watch } from "vue";
 import { Chess } from "chess.js";
 import { useLichess } from "stores/lichess";
 import { useUI } from "stores/ui";
+import { useWB } from "stores/wikibooks";
 import { _ } from "lodash";
 import { useQuasar } from "quasar";
 
@@ -475,6 +488,7 @@ export default defineComponent({
     const depth = ref(6); // number of turns to play
     const timeout = ref(1000); // ms to wait before computer playing
     const minMovePercentage = ref(10); // The minimum number of parties in which a moved is used to be considered
+    const showWikiBooks = ref(false);
 
     // UI
     const ui = useUI();
@@ -490,11 +504,16 @@ export default defineComponent({
     getPosition(fen.value);
     watch(fen, () => getPosition(fen.value));
 
+    // WIKIBOOKS
+    const WB = useWB();
+
     // TOOLS
     const switchOrientation = () => {
       orientation.value = orientation.value === "w" ? "b" : "w";
     };
     const restart = () => {
+      // Hide Wikibooks
+      showWikiBooks.value = false;
       var g = new Chess();
       game.load(g.fen());
       fen.value = game.fen();
@@ -506,6 +525,9 @@ export default defineComponent({
     const move = (from, to, metadata) => {
       // Nothing happens because this is called a second time probably
       if (!from || !to) return;
+
+      // Hide Wikibooks
+      showWikiBooks.value = false;
 
       // Is it a valid move ?
       if (!possibleMoves.value.find((m) => m.from == from && m.to == to)) {
@@ -575,6 +597,9 @@ export default defineComponent({
       for (var k = 0; k <= i; k++) {
         g.move(history.value[k]);
       }
+      // Hide Wikibooks
+      showWikiBooks.value = false;
+      // Resore game
       fen.value = g.fen();
       game.load_pgn(g.pgn());
     };
@@ -611,6 +636,7 @@ export default defineComponent({
         variants.value
       )
         moves = moves.slice(0, variants.value);
+
       // return moves
       return moves;
     });
@@ -749,6 +775,8 @@ export default defineComponent({
       showHistory,
       ui,
       errors,
+      WB,
+      showWikiBooks,
     };
   },
 });

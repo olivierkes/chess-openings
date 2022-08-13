@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { LocalStorage, TouchRepeat } from "quasar";
+import { LocalStorage } from "quasar";
 import axios from "axios";
 import { generateCodeFrame } from "vue/compiler-sfc";
 import { Chess } from "chess.js";
