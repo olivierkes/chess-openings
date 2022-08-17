@@ -1,6 +1,6 @@
 <template>
-  <q-page class="row">
-    <div class="col-12">
+  <q-page class="">
+    <div class="">
       <q-card class="" flat>
         <chess-board
           :orientation="orientation"
@@ -87,7 +87,7 @@
           >
             <q-tooltip>Show history</q-tooltip>
           </q-btn>
-          <q-btn-dropdown
+          <q-btn
             dense
             size="sm"
             flat
@@ -99,37 +99,39 @@
               }[level]
             "
           >
-            <q-list>
-              <q-item-label header>Difficulty</q-item-label>
-              <q-item clickable flat @click="level = 'arrows'">
-                <q-item-section avatar>
-                  <q-icon
-                    name="arrow_forward"
-                    :color="level == 'arrows' ? 'primary' : 'black'"
-                  ></q-icon>
-                </q-item-section>
-                <q-item-section>Show full move</q-item-section>
-              </q-item>
-              <q-item clickable flat @click="level = 'circles'">
-                <q-item-section avatar>
-                  <q-icon
-                    name="radio_button_unchecked"
-                    :color="level == 'circles' ? 'primary' : 'black'"
-                  ></q-icon>
-                </q-item-section>
-                <q-item-section>Hint piece</q-item-section>
-              </q-item>
-              <q-item flat clickable @click="level = 'none'">
-                <q-item-section avatar>
-                  <q-icon
-                    name="block"
-                    :color="level == 'none' ? 'primary' : 'black'"
-                  ></q-icon>
-                </q-item-section>
-                <q-item-section>Show nothing</q-item-section>
-              </q-item>
-            </q-list>
-          </q-btn-dropdown>
+            <q-menu auto-close anchor="center left" self="center right">
+              <q-list>
+                <q-item-label header overline>Difficulty</q-item-label>
+                <q-item clickable flat @click="level = 'arrows'">
+                  <q-item-section avatar>
+                    <q-icon
+                      name="arrow_forward"
+                      :color="level == 'arrows' ? 'primary' : 'black'"
+                    ></q-icon>
+                  </q-item-section>
+                  <q-item-section>Show full move</q-item-section>
+                </q-item>
+                <q-item clickable flat @click="level = 'circles'">
+                  <q-item-section avatar>
+                    <q-icon
+                      name="radio_button_unchecked"
+                      :color="level == 'circles' ? 'primary' : 'black'"
+                    ></q-icon>
+                  </q-item-section>
+                  <q-item-section>Hint piece</q-item-section>
+                </q-item>
+                <q-item flat clickable @click="level = 'none'">
+                  <q-item-section avatar>
+                    <q-icon
+                      name="block"
+                      :color="level == 'none' ? 'primary' : 'black'"
+                    ></q-icon>
+                  </q-item-section>
+                  <q-item-section>Show nothing</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
         </div>
         <!-- History -->
         <div class="q-pa-xs" v-if="showHistory">
@@ -298,13 +300,13 @@
           </q-card-section>
         </q-card>
       </q-dialog>
-      <q-card square :flat="!showList">
+      <q-card square :flat="!showList" class="">
         <q-inner-loading :showing="loading">
           <q-spinner-gears size="50px" color="primary" />
         </q-inner-loading>
         <!-- Name -->
         <q-card-section
-          class="bg-primary text-white q-pa-sm row items-center no-wrap"
+          class="bg-primary text-white q-pa-sm col row items-center no-wrap"
           v-if="game.history().length"
         >
           <div class="col">
