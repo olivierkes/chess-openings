@@ -2,9 +2,12 @@
   <div>
     <div
       class="WB"
-      v-if="WB.pages[page]"
+      v-if="WB.pages[page] && WB.pages[page].parse"
       v-html="WB.pages[page].parse.text['*']"
     />
+    <div v-else-if="WB.pages[page] && WB.pages[page].error">
+      <span class="text-caption">La page n'existe pas sur WikiBooks.</span>
+    </div>
     <q-spinner v-else class="full-width" size="3em" color="primary" />
   </div>
 </template>
@@ -44,18 +47,19 @@ export default {
 
 <style lang="scss">
 .WB {
+  font-size: 90%;
   .infobox,
   .navbox {
     display: none;
   }
   h1 {
     font-size: 2em;
-    line-height: 2em;
+    line-height: 1;
     margin: 0;
   }
   h2 {
     font-size: 1.5em;
-    line-height: 1.5em;
+    line-height: 1;
     margin: 0;
   }
 

@@ -1,12 +1,14 @@
 <template>
   <q-page class="row">
     <div class="col-12">
-      <q-card class="q-ma-sm" flat>
+      <q-card class="" flat>
         <chess-board
           :orientation="orientation"
           :fen="fen"
           @afterMove="move"
           :shapes="shapes"
+          :attack="attack"
+          :heatmap="heatmap"
         />
         <q-linear-progress
           animation-speed="500"
@@ -47,8 +49,20 @@
             :disable="game.history().length >= history.length"
           ></q-btn>
           <q-space />
+          <q-btn dense size="sm" flat @click="attack = !attack" icon="pattern">
+            <q-tooltip>Show number of attackers and defenders</q-tooltip>
+          </q-btn>
           <q-btn dense size="sm" flat @click="switchOrientation" icon="cached">
             <q-tooltip>Switch side</q-tooltip>
+          </q-btn>
+          <q-btn
+            dense
+            size="sm"
+            flat
+            @click="heatmap = !heatmap"
+            icon="grid_view"
+          >
+            <q-tooltip>Show attack heatmap</q-tooltip>
           </q-btn>
           <q-space />
           <q-btn
@@ -144,7 +158,7 @@
       <!-- You won ! -->
       <q-card
         v-if="turnPlayed >= depth"
-        :class="'q-ma-md ' + (errors ? 'bg-orange' : 'bg-green')"
+        :class="'q-ma-xs ' + (errors ? 'bg-orange' : 'bg-green')"
         square
       >
         <q-card-section>
@@ -284,33 +298,37 @@
           </q-card-section>
         </q-card>
       </q-dialog>
-      <q-card class="q-ma-md">
+      <q-card square :flat="!showList">
         <q-inner-loading :showing="loading">
           <q-spinner-gears size="50px" color="primary" />
         </q-inner-loading>
         <!-- Name -->
         <q-card-section
           class="bg-primary text-white q-pa-sm row items-center no-wrap"
-          v-if="lichess.positions[fen] && lichess.positions[fen].opening"
+          v-if="game.history().length"
         >
-          <div class="col text-subtitle1">
-            {{ lichess.positions[fen].opening.name }}
+          <div class="col">
+            <span
+              v-if="lichess.positions[fen] && lichess.positions[fen].opening"
+            >
+              {{ lichess.positions[fen].opening.name }}
+            </span>
           </div>
           <q-btn
             flat
             class="col-auto"
-            icon="info"
+            :icon="showWikiBooks ? 'close' : 'menu_book'"
             @click="showWikiBooks = !showWikiBooks"
           >
             <q-tooltip>Show info from Wikibooks</q-tooltip>
           </q-btn>
         </q-card-section>
         <!-- WIKIBOOKS -->
-        <q-card-section v-if="showWikiBooks">
+        <q-card-section v-if="showWikiBooks" class="q-pa-sm">
           <wiki-books :history="game.history()"></wiki-books>
         </q-card-section>
         <!-- Games -->
-        <q-list v-if="game.history().length == 0" separator>
+        <q-list v-if="historyIcons.length == 0" separator>
           <q-item
             clickable
             v-for="(m, i) in possibleMoves"
@@ -373,6 +391,7 @@
         <q-list
           v-if="showList && lichess.positions[fen] && game.history().length > 0"
         >
+          <q-separator />
           <q-item
             clickable
             v-for="(m, i) in possibleMoves"
@@ -489,6 +508,8 @@ export default defineComponent({
     const timeout = ref(1000); // ms to wait before computer playing
     const minMovePercentage = ref(10); // The minimum number of parties in which a moved is used to be considered
     const showWikiBooks = ref(false);
+    const heatmap = ref(true); // Show heatmap
+    const attack = ref(true); // Show attack and defends
 
     // UI
     const ui = useUI();
@@ -714,7 +735,16 @@ export default defineComponent({
 
     // SAVE SETTINGS
     watch(
-      [playing, level, variants, depth, timeout, minMovePercentage],
+      [
+        playing,
+        level,
+        variants,
+        depth,
+        timeout,
+        minMovePercentage,
+        attack,
+        heatmap,
+      ],
       (v) => {
         $q.localStorage.set("settings", {
           playing: playing.value,
@@ -723,6 +753,8 @@ export default defineComponent({
           depth: depth.value,
           timeout: timeout.value,
           minMovePercentage: minMovePercentage.value,
+          attack: attack.value,
+          heatmap: heatmap.value,
         });
       }
     );
@@ -733,6 +765,8 @@ export default defineComponent({
       depth.value = 6;
       timeout.value = 1000;
       minMovePercentage.value = 10;
+      attack.value = true;
+      heatmap.value = true;
     };
     const loadSettings = () => {
       if ($q.localStorage.has("settings")) {
@@ -743,6 +777,8 @@ export default defineComponent({
         depth.value = s.depth;
         timeout.value = s.timeout;
         minMovePercentage.value = s.minMovePercentage;
+        attack.value = s.attack;
+        heatmap.value = s.heatmap;
       }
     };
     loadSettings();
@@ -777,6 +813,8 @@ export default defineComponent({
       errors,
       WB,
       showWikiBooks,
+      attack,
+      heatmap,
     };
   },
 });
