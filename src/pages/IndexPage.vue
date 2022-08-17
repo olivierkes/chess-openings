@@ -360,7 +360,7 @@
                 >
                   {{ m.percentage.toFixed(1) + "%" }}
                 </div>
-                {{ m.total }} parties
+                {{ k(m.total) }} parties
               </q-item-label>
             </q-item-section>
 
@@ -391,6 +391,7 @@
         </q-list>
         <!-- Moves -->
         <q-list
+          separator
           v-if="showList && lichess.positions[fen] && game.history().length > 0"
         >
           <q-separator />
@@ -413,6 +414,7 @@
               <q-item-label v-if="m.name">
                 <q-icon :name="iconName(m.piece)"></q-icon> {{ m.name }}
               </q-item-label>
+              <q-item-label caption> {{ k(m.total) }} parties </q-item-label>
               <q-item-label caption class="full-width">
                 <div
                   class="bg-green-10 float-left text-center text-white q-mr-sm"
@@ -420,7 +422,6 @@
                 >
                   {{ m.percentage.toFixed(1) + "%" }}
                 </div>
-                {{ m.total }} parties
               </q-item-label>
 
               <!-- Win -->
@@ -746,6 +747,8 @@ export default defineComponent({
         minMovePercentage,
         attack,
         heatmap,
+        showList,
+        showHistory,
       ],
       (v) => {
         $q.localStorage.set("settings", {
@@ -757,6 +760,8 @@ export default defineComponent({
           minMovePercentage: minMovePercentage.value,
           attack: attack.value,
           heatmap: heatmap.value,
+          showList: showList.value,
+          showHistory: showHistory.value,
         });
       }
     );
@@ -769,6 +774,8 @@ export default defineComponent({
       minMovePercentage.value = 10;
       attack.value = true;
       heatmap.value = true;
+      showList.value = true;
+      showHistory.value = false;
     };
     const loadSettings = () => {
       if ($q.localStorage.has("settings")) {
@@ -781,9 +788,19 @@ export default defineComponent({
         minMovePercentage.value = s.minMovePercentage;
         attack.value = s.attack;
         heatmap.value = s.heatmap;
+        showList.value = s.showList;
+        showHistory.value = s.showHistory;
       }
     };
     loadSettings();
+
+    const k = (val) => {
+      if (val > 10000000) return `${(val / 10000000).toFixed(0)}M`;
+      else if (val > 1000000) return `${(val / 1000000).toFixed(1)}M`;
+      else if (val > 10000) return `${(val / 10000).toFixed()}k`;
+      else if (val > 1000) return `${(val / 1000).toFixed(1)}k`;
+      else return val;
+    };
 
     return {
       orientation,
@@ -817,6 +834,7 @@ export default defineComponent({
       showWikiBooks,
       attack,
       heatmap,
+      k,
     };
   },
 });
