@@ -101,7 +101,7 @@
           >
             <q-menu auto-close anchor="center left" self="center right">
               <q-list>
-                <q-item-label header overline>Difficulty</q-item-label>
+                <q-item-label header overline>Assistance</q-item-label>
                 <q-item clickable flat @click="level = 'arrows'">
                   <q-item-section avatar>
                     <q-icon
@@ -165,22 +165,50 @@
       >
         <q-card-section>
           <div>
-            <q-btn
+            <!-- <q-btn
               flat
               class="float-right"
               icon="restart_alt"
               @click="restart"
               :label="errors ? 'Try again' : 'Restart'"
-            />
-            <div class="text-h6">
-              <q-icon name="star" size="md" v-if="errors == 0"></q-icon>
-              Congratulations !
+            /> -->
+            <div class="text-subtitle1">
+              <q-icon name="star" size="sm" v-if="errors == 0"></q-icon>
+              You made it !
             </div>
-            <div v-if="errors == 0">You won !</div>
-            <div v-else>
+            <div v-if="errors != 0">
               You finished, but you made {{ errors }} mistake{{
                 errors > 1 ? "s" : ""
               }}.
+            </div>
+            <div>
+              <span v-if="['arrows', 'circles'].includes(level)">
+                Now try again
+                <a
+                  @click="ui.showOptions = true"
+                  class="cursor-pointer text-weight-bold"
+                  ><q-icon
+                    :name="
+                      {
+                        arrows: 'arrow_forward',
+                        circles: 'radio_button_unchecked',
+                        none: 'block',
+                      }[level]
+                    "
+                  />
+                  changing assistance</a
+                >, or
+                <a @click="restart" class="cursor-pointer text-weight-bold">
+                  <q-icon name="restart_alt" />
+                  start over</a
+                >.</span
+              >
+              <span v-else
+                >Wanna
+                <a @click="restart" class="cursor-pointer text-weight-bold"
+                  ><q-icon name="restart_alt" /> start over</a
+                >?</span
+              >
             </div>
           </div>
         </q-card-section>
