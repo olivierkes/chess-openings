@@ -300,7 +300,21 @@
           </q-card-section>
         </q-card>
       </q-dialog>
-      <q-card square :flat="!showList" class="">
+      <!-- No more moves -->
+      <q-card
+        v-if="!possibleMoves.length"
+        class="q-ma-xs q-pa-xs text-grey text-caption text-center"
+        flat
+      >
+        No more moves. Change
+        <a
+          @click="ui.showOptions = true"
+          class="cursor-pointer text-weight-bold"
+          ><q-icon name="settings" /> parameters</a
+        >
+        or start over.
+      </q-card>
+      <q-card v-else square :flat="!showList" class="">
         <q-inner-loading :showing="loading">
           <q-spinner-gears size="50px" color="primary" />
         </q-inner-loading>
@@ -579,7 +593,7 @@ export default defineComponent({
 
       // Play computer
       if (game.turn() != playing.value) {
-        if (ui.autoplay) {
+        if (ui.autoplay && possibleMoves.value.length) {
           var m = _.sample(possibleMoves.value);
           setTimeout(() => move(m.from, m.to), timeout.value);
         }
