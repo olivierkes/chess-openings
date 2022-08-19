@@ -216,9 +216,9 @@
       <!-- Options  -->
       <q-dialog v-model="ui.showOptions">
         <q-card flat v-if="ui.showOptions">
-          <q-card-section class="row items-center q-gutter-md">
+          <q-card-section class="row items-center justify-center q-gutter-md">
             <!-- Player color -->
-            <div class="text-caption col-3">Playing from</div>
+            <div class="text-caption col-11">Playing from</div>
             <q-btn-toggle
               v-model="playing"
               unelevated
@@ -227,7 +227,7 @@
               text-color="grey-8"
               toggle-text-color="white"
               rounded
-              class="col-8 q-mt-md"
+              class="col-auto q-mt-xs"
               :options="[
                 {
                   label: 'White',
@@ -242,7 +242,7 @@
               ]"
             />
             <!-- Level -->
-            <div class="text-caption col-3">Assistance</div>
+            <div class="text-caption col-11">Assistance</div>
             <q-btn-toggle
               v-model="level"
               unelevated
@@ -251,7 +251,7 @@
               text-color="grey-8"
               toggle-text-color="white"
               rounded
-              class="col-8"
+              class="col-auto q-mt-xs"
               :options="[
                 { label: 'Arrows', value: 'arrows', icon: 'arrow_forward' },
                 {
@@ -263,42 +263,50 @@
               ]"
             />
             <!-- Move percentage -->
-            <div class="text-caption col-3">
+            <div class="text-caption col-11">
               Only use moves played more than x% of the time.
             </div>
             <q-slider
               v-model="minMovePercentage"
-              class="col-6"
+              class="col-9 q-mt-xs"
               :min="0"
               :max="50"
               label
               :label-value="minMovePercentage + '%'"
             />
-            <div class="text-caption col-1">{{ minMovePercentage }}%</div>
+            <div class="text-caption col-1 q-mt-xs">
+              {{ minMovePercentage }}%
+            </div>
             <!-- Depth -->
-            <div class="text-caption col-3">
+            <div class="text-caption col-11">
               Number of moves to play (depth)
             </div>
-            <q-slider v-model="depth" class="col-6" :min="1" :max="15" label />
-            <div class="text-caption col-1">
+            <q-slider
+              v-model="depth"
+              class="col-9 q-mt-xs"
+              :min="1"
+              :max="15"
+              label
+            />
+            <div class="text-caption col-1 q-mt-xs">
               {{ depth }}
             </div>
             <!-- Timer -->
-            <q-checkbox v-model="ui.autoplay" class="col-1" />
-            <div class="text-caption col-2">Autoplay</div>
+            <div class="text-caption col-11">Autoplay</div>
+            <q-checkbox v-model="ui.autoplay" class="col-1 q-mt-xs" />
             <q-slider
               v-model="timeout"
-              class="col-6"
+              class="col-8 q-mt-xs"
               :min="0"
               :max="5000"
               :step="100"
               :disable="!ui.autoplay"
             />
-            <div class="text-caption col-1 disabled">
+            <div class="text-caption col-1 q-mt-xs disabled">
               {{ timeout + "ms" }}
             </div>
             <!-- Variants -->
-            <div class="text-caption col-3">Number of variant to learn</div>
+            <div class="text-caption col-11">Number of variant to learn</div>
             <q-btn-toggle
               v-model="variants"
               unelevated
@@ -307,7 +315,7 @@
               text-color="grey-8"
               toggle-text-color="white"
               rounded
-              class="col-8"
+              class="col-8 q-mt-xs"
               :options="[
                 { label: 'All', value: 0 },
                 { label: '1', value: 1 },
@@ -318,7 +326,7 @@
               ]"
             />
             <q-btn
-              class="col-6 offset-3"
+              class="col-11"
               label="Restore defaults"
               flat
               icon="settings_backup_restore"
@@ -865,7 +873,7 @@ export default defineComponent({
       timeout.value = 1000;
       minMovePercentage.value = 10;
       attack.value = true;
-      heatmap.value = true;
+      heatmap.value = false;
       showList.value = true;
       showHistory.value = false;
     };
