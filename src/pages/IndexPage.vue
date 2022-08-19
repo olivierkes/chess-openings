@@ -329,17 +329,19 @@
           <q-separator />
           <q-card-section class="q-py-xs text-caption text-grey-7">
             <div class="row justify-between items-center">
-              <div class="col-1">v.{{ ui.version }}</div>
-              <!-- <q-btn
-                flat
-                icon="fa-brands fa-github"
-                class="col"
-                size="sm"
-                href="https://lichess.org/source"
-                target="_blank"
-              >
-                <q-tooltip>Github project</q-tooltip></q-btn
-              > -->
+              <div class="col-auto">
+                <q-btn
+                  flat
+                  dense
+                  icon="fa-brands fa-github"
+                  size="sm"
+                  href="https://github.com/olivierkes/chess-openings"
+                  target="_blank"
+                >
+                  <q-tooltip>Github project</q-tooltip></q-btn
+                >
+                v.{{ ui.version }}
+              </div>
               <div class="col-5 text-center">
                 <q-icon name="fa-solid fa-database q-mr-xs"></q-icon>
                 <span
