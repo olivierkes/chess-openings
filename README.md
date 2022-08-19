@@ -2,6 +2,8 @@
 
 A webapp to learn and study quickly chess openings
 
+![chess-opnings-screenshot](https://user-images.githubusercontent.com/1192933/185596465-760d4898-28b7-4db4-8df6-d52cbcf05529.png)
+
 Thanks to:
 
 - [Chess.js](https://github.com/jhlywa/chess.js): A Javascript chess library for chess move generation/validation, piece placement/movement, and check/checkmate/draw detection
