@@ -1,8 +1,12 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header>
-      <q-toolbar>
-        <q-toolbar-title> Chess Openings Learner </q-toolbar-title>
+      <q-bar>
+        <!-- <q-toolbar-title> Chess Openings Tutor </q-toolbar-title> -->
+        <q-avatar class="bg-grey-4" size="sm">
+          <q-icon name="img:favicon.ico" size="xs"></q-icon>
+        </q-avatar>
+        <div class="col">Chess Openings Tutor</div>
 
         <q-toggle
           v-model="ui.autoplay"
@@ -19,8 +23,9 @@
           color="white"
           @click="ui.showOptions = !ui.showOptions"
           icon="settings"
+          class="q-pa-sm"
         ></q-btn>
-      </q-toolbar>
+      </q-bar>
     </q-header>
 
     <q-page-container>
