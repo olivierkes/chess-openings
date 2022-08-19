@@ -326,6 +326,53 @@
               @click="restoreSettings"
             ></q-btn>
           </q-card-section>
+          <q-separator />
+          <q-card-section class="q-py-xs text-caption text-grey-7">
+            <div class="row justify-between items-center">
+              <div class="col-1">v.{{ ui.version }}</div>
+              <!-- <q-btn
+                flat
+                icon="fa-brands fa-github"
+                class="col"
+                size="sm"
+                href="https://lichess.org/source"
+                target="_blank"
+              >
+                <q-tooltip>Github project</q-tooltip></q-btn
+              > -->
+              <div class="col-5 text-center">
+                <q-icon name="fa-solid fa-database q-mr-xs"></q-icon>
+                <span
+                  >{{ lichess.cacheLength() }}
+                  <q-tooltip>Number of positions stored in cache</q-tooltip>
+                </span>
+                <q-btn
+                  flat
+                  dense
+                  size="xs"
+                  icon="far fa-circle-xmark text-grey"
+                  @click="
+                    lichess.clearCache();
+                    saveSettings();
+                    ui.showOptions = false;
+                  "
+                >
+                  <q-tooltip>Clear database</q-tooltip>
+                </q-btn>
+              </div>
+              <q-btn
+                flat
+                class="col-1"
+                alt="Lichess logo"
+                icon="img:lichess.svg"
+                size="sm"
+                href="https://lichess.org/source"
+                target="_blank"
+              >
+                <q-tooltip>Using many excellent lichess assets</q-tooltip>
+              </q-btn>
+            </div>
+          </q-card-section>
         </q-card>
       </q-dialog>
       <!-- No more moves -->
@@ -792,21 +839,22 @@ export default defineComponent({
         showList,
         showHistory,
       ],
-      (v) => {
-        $q.localStorage.set("settings", {
-          playing: playing.value,
-          level: level.value,
-          variants: variants.value,
-          depth: depth.value,
-          timeout: timeout.value,
-          minMovePercentage: minMovePercentage.value,
-          attack: attack.value,
-          heatmap: heatmap.value,
-          showList: showList.value,
-          showHistory: showHistory.value,
-        });
-      }
+      (v) => saveSettings()
     );
+    const saveSettings = () => {
+      $q.localStorage.set("settings", {
+        playing: playing.value,
+        level: level.value,
+        variants: variants.value,
+        depth: depth.value,
+        timeout: timeout.value,
+        minMovePercentage: minMovePercentage.value,
+        attack: attack.value,
+        heatmap: heatmap.value,
+        showList: showList.value,
+        showHistory: showHistory.value,
+      });
+    };
     const restoreSettings = () => {
       playing.value = "w";
       level.value = "arrows";
@@ -877,6 +925,7 @@ export default defineComponent({
       attack,
       heatmap,
       k,
+      saveSettings,
     };
   },
 });

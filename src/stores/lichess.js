@@ -97,5 +97,7 @@ export const useLichess = defineStore("lichess", {
       this.loading = false;
       return p;
     },
+    cacheLength: () => LocalStorage.getLength() - 1,
+    clearCache: () => LocalStorage.clear(),
   },
 });

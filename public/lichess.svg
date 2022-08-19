@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="-12 -12 74 74"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="lichess.svg"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="5.5878378"
+     inkscape:cx="-6.1741233"
+     inkscape:cy="50.108827"
+     inkscape:window-width="1920"
+     inkscape:window-height="1007"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <path
+     fill="#000000"
+     stroke="#000000"
+     stroke-linejoin="round"
+     d="m 45.7928,-11.49877 c -5.259179,0.622773 -9.612528,1.343878 -13.83477,4.4458217 C -4.0010453,-9.5827758 -13.276866,15.368355 -11.232789,31.505316 -7.041834,62.569452 35.307219,70.86961 49.328219,49.884558 38.237758,61.350725 20.609825,62.924045 7.1311314,54.479368 -6.3475628,46.03469 -12.999754,28.56726 -5.2689097,13.929125 2.463424,-0.70901125 16.055347,-5.4870775 31.004525,-2.7009896 c 3.620342,-2.1126592 7.784478,-4.7974349 11.404819,-4.7482686 l -2.52381,7.24084885 18.998598,31.83887635 c -0.654045,8.423818 -8.133104,9.106187 -8.133104,9.106187 C 49.895853,38.54652 48.31661,36.353407 43.537163,31.743698 38.759207,27.133989 17.516892,16.581123 20.015374,7.5971065 17.03418,17.977146 35.377241,28.681982 40.932901,33.912973 c 5.557149,5.229503 8.083939,8.998916 8.633694,10.065675 0,0 13.992694,-3.730677 11.677463,-13.300219 L 43.474589,-1.5597365 Z"
+     id="path2"
+     style="stroke-width:1" />
+</svg>

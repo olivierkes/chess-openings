@@ -4,8 +4,14 @@
       <q-toolbar>
         <q-toolbar-title> Chess Openings Learner </q-toolbar-title>
 
-        <div>v.0.9</div>
-        <q-toggle v-model="ui.autoplay" color="white">
+        <q-toggle
+          v-model="ui.autoplay"
+          color="secondary"
+          checked-icon="fas fa-play"
+          unchecked-icon="fas fa-pause"
+          keep-color
+          icon-color="white"
+        >
           <q-tooltip>Autoplay</q-tooltip>
         </q-toggle>
         <q-btn
